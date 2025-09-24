@@ -56,8 +56,7 @@
                 <form id="reflection-form">
                     <label for="reflection-input">What matters today? How are you feeling?</label>
                     <textarea id="reflection-input" rows="5" placeholder="Write your thoughts here..." required></textarea>
-                    <button type="submit">Save Reflection</button>
-                </form>
+                    <button type="submit">Save</button> </form>
                 <div id="reflection-display" hidden>
                     <p id="display-reflection-text"></p>
                     <button id="edit-reflection-btn">Edit</button>
@@ -65,45 +64,18 @@
             </div>
 
             <div class="card" id="weekly-ritual-card">
-                <h2>Weekly Planning Ritual</h2>
-                <form id="weekly-plan-form">
-                    <label for="week-focus">What is your main focus this week?</label>
-                    <input type="text" id="week-focus" placeholder="e.g., Complete project proposal" required>
-                    <label>What are your top 3 priorities?</label>
-                    <input type="text" id="priority-1" placeholder="Priority #1" required>
-                    <input type="text" id="priority-2" placeholder="Priority #2" required>
-                    <input type="text" id="priority-3" placeholder="Priority #3" required>
-                    <label for="week-vibe">What's the vibe for the week?</label>
-                    <input type="text" id="week-vibe" placeholder="e.g., Focused and energized" required>
-                    <button type="submit">Save Weekly Plan</button>
-                </form>
-                <div id="weekly-plan-display" hidden>
-                    <h4>This Week's Focus:</h4>
-                    <p id="display-focus"></p>
-                    <h4>Top Priorities:</h4>
-                    <ul id="display-priorities"></ul>
-                    <h4>Vibe for the Week:</h4>
-                    <p id="display-vibe"></p>
-                    <button id="edit-plan-btn">Edit Plan</button>
                 </div>
-            </div>
             
             <div class="card">
                 <h2>Intentional Goal Tracking</h2>
                 <p>(Coming in Phase 3)</p>
             </div>
 
-             <div class="card" id="habit-tracker-card">
-                <h2>Daily Habits</h2>
-                <form id="habit-form">
-                    <input type="text" id="habit-input" placeholder="Enter a new habit..." autocomplete="off">
-                    <button type="submit">Add Habit</button>
-                </form>
-                <ul id="habit-list"></ul>
-            </div>
+            <div class="card" id="habit-tracker-card">
+                </div>
         </div>
     </div>
 
-    <script type="module" src="script-v2.js"></script>
+    <script type="module" src="script-v3.js"></script>
 </body>
 </html>
