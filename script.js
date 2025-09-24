@@ -1,87 +1,87 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const habitForm = document.getElementById('habit-form');
-    const habitInput = document.getElementById('habit-input');
-    const habitList = document.getElementById('habit-list');
+import { auth } from './index.html';
+import { 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
+} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 
-    // Load habits from local storage when the page loads
-    loadHabits();
+// Get DOM elements
+const authContainer = document.getElementById('auth-container');
+const trackerContainer = document.getElementById('tracker-container');
+const signupForm = document.getElementById('signup-form');
+const loginForm = document.getElementById('login-form');
+const logoutBtn = document.getElementById('logout-btn');
+const userEmailSpan = document.getElementById('user-email');
 
-    habitForm.addEventListener('submit', (e) => {
-        e.preventDefault(); // Prevent page reload on form submission
-        const habitText = habitInput.value.trim();
+// --- AUTHENTICATION LOGIC ---
 
-        if (habitText !== '') {
-            addHabit(habitText);
-            habitInput.value = ''; // Clear the input field
-            saveHabits();
-        }
+// Listen for changes in authentication state (user logs in or out)
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // User is signed in
+        console.log('User logged in:', user.email);
+        authContainer.hidden = true;
+        trackerContainer.hidden = false;
+        userEmailSpan.textContent = user.email;
+        // NOTE: We will load habits here in the next step
+    } else {
+        // User is signed out
+        console.log('User logged out');
+        authContainer.hidden = false;
+        trackerContainer.hidden = true;
+        userEmailSpan.textContent = '';
+    }
+});
+
+// Handle Sign-up
+signupForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+
+    createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+            console.log('Signed up successfully!', userCredential.user);
+            signupForm.reset();
+        })
+        .catch((error) => {
+            alert(`Error signing up: ${error.message}`);
+        });
+});
+
+// Handle Login
+loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+            console.log('Logged in successfully!', userCredential.user);
+            loginForm.reset();
+        })
+        .catch((error) => {
+            alert(`Error logging in: ${error.message}`);
+        });
+});
+
+// Handle Logout
+logoutBtn.addEventListener('click', () => {
+    signOut(auth).catch((error) => {
+        console.error('Logout Error:', error);
     });
+});
 
-    // Add a habit to the DOM
-    function addHabit(text, isCompleted = false) {
-        const li = document.createElement('li');
-        li.className = 'habit-item';
-        if (isCompleted) {
-            li.classList.add('completed');
-        }
 
-        // Create the habit text span
-        const habitTextSpan = document.createElement('span');
-        habitTextSpan.className = 'habit-text';
-        habitTextSpan.textContent = text;
-        habitTextSpan.addEventListener('click', () => {
-            li.classList.toggle('completed');
-            saveHabits();
-        });
+// --- HABIT TRACKER LOGIC (To be updated later) ---
+// For now, the old logic is removed. We'll add Firebase-based logic next.
+const habitForm = document.getElementById('habit-form');
+const habitInput = document.getElementById('habit-input');
+const habitList = document.getElementById('habit-list');
 
-        // Create the actions div for buttons
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'actions';
-
-        // Create the complete button
-        const completeBtn = document.createElement('button');
-        completeBtn.className = 'complete-btn';
-        completeBtn.innerHTML = '<i class="fas fa-check-circle"></i>';
-        completeBtn.addEventListener('click', () => {
-            li.classList.toggle('completed');
-            saveHabits();
-        });
-
-        // Create the delete button
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-        deleteBtn.addEventListener('click', () => {
-            li.remove();
-            saveHabits();
-        });
-        
-        actionsDiv.appendChild(completeBtn);
-        actionsDiv.appendChild(deleteBtn);
-        
-        li.appendChild(habitTextSpan);
-        li.appendChild(actionsDiv);
-
-        habitList.appendChild(li);
-    }
-
-    // Save all habits to local storage
-    function saveHabits() {
-        const habits = [];
-        document.querySelectorAll('.habit-item').forEach(item => {
-            habits.push({
-                text: item.querySelector('.habit-text').textContent,
-                completed: item.classList.contains('completed')
-            });
-        });
-        localStorage.setItem('habits', JSON.stringify(habits));
-    }
-
-    // Load habits from local storage and display them
-    function loadHabits() {
-        const habits = JSON.parse(localStorage.getItem('habits'));
-        if (habits) {
-            habits.forEach(habit => addHabit(habit.text, habit.completed));
-        }
-    }
+habitForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    alert('We will connect this to the database in the next step!');
+    habitInput.value = '';
 });
