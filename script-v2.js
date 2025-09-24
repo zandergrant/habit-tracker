@@ -1,126 +1,144 @@
-import { auth, db } from './firebase-config.js';
-import { 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword,
-    onAuthStateChanged,
-    signOut
-} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
-import {
-    collection, addDoc, query, where, onSnapshot, doc,
-    deleteDoc, updateDoc, getDoc, setDoc
-} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+/* --- PREMIUM LIGHT THEME --- */
 
-// --- Get DOM Elements ---
-const authContainer = document.getElementById('auth-container');
-const appContainer = document.getElementById('app-container');
-const signupForm = document.getElementById('signup-form');
-const loginForm = document.getElementById('login-form');
-const logoutBtn = document.getElementById('logout-btn');
-const userEmailSpan = document.getElementById('user-email');
-const habitForm = document.getElementById('habit-form');
-const habitInput = document.getElementById('habit-input');
-const habitList = document.getElementById('habit-list');
-const weeklyPlanForm = document.getElementById('weekly-plan-form');
-const weeklyPlanDisplay = document.getElementById('weekly-plan-display');
-const editPlanBtn = document.getElementById('edit-plan-btn');
-// New Daily Reflection Elements
-const reflectionForm = document.getElementById('reflection-form');
-const reflectionInput = document.getElementById('reflection-input');
-const reflectionDisplay = document.getElementById('reflection-display');
-const displayReflectionText = document.getElementById('display-reflection-text');
-const editReflectionBtn = document.getElementById('edit-reflection-btn');
+:root {
+    /* Define our new light theme color palette */
+    --background-light: #F9FAFB;
+    --card-light: #FFFFFF;
+    --border-light: #E5E7EB;
+    --text-dark-primary: #1F2937;
+    --text-dark-secondary: #6B7280;
+    --text-dark-muted: #9CA3AF;
+    --accent-blue: #5D9CEC;
+    --accent-teal: #29D6C5;
+    --accent-orange: #FDAB73;
+    --accent-red: #E74C3C;
+    --accent-green: #2ECC71;
+}
 
-let currentUser = null;
-let habitsUnsubscribe = null;
-let statsChart = null; 
+/* General Body Styles */
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--background-light);
+    color: var(--text-dark-primary);
+    margin: 0;
+}
 
-// --- Helper Functions ---
-const getWeekId = (date = new Date()) => { /* ... (no changes) ... */ const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())); const dayNum = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7); return `${d.getUTCFullYear()}-${weekNo}`; };
-// New helper to get a YYYY-MM-DD date string
-const getDayId = (date = new Date()) => {
-    return date.toISOString().split('T')[0];
-};
+/* Auth Container (Login Page) */
+#auth-container { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+#auth-container form { background-color: var(--card-light); padding: 30px 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; text-align: center; }
+#auth-container h1 { font-size: 2em; margin-bottom: 20px; }
+#auth-container h2 { margin-top: 0; color: var(--text-dark-primary); }
+#auth-container input { width: 100%; padding: 12px; margin-bottom: 10px; background-color: var(--background-light); border: 1px solid var(--border-light); color: var(--text-dark-primary); border-radius: 8px; box-sizing: border-box; }
+#auth-container button { width: 100%; padding: 12px; background-color: var(--accent-blue); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+#auth-container hr { width: 100%; max-width: 400px; border: none; border-top: 1px solid var(--border-light); margin: 25px 0; }
+#auth-container[hidden] { display: none; }
 
-// --- CHART INITIALIZATION ---
-const initializeStatsDashboard = () => { /* ... (no changes) ... */ const ctx = document.getElementById('stats-chart').getContext('2d'); if (statsChart) { statsChart.destroy(); } statsChart = new Chart(ctx, { type: 'line', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Weekly Vibe', data: [], borderColor: '#5d9cec', tension: 0.4, pointBackgroundColor: '#5d9cec', pointRadius: 5, }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: false }, legend: { display: false }, afterDraw: chart => { if (chart.data.datasets[0].data.length === 0) { let ctx = chart.ctx; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = "16px sans-serif"; ctx.fillStyle = '#aaa'; ctx.fillText('Not enough data to display a trend yet.', chart.width / 2, chart.height / 2); ctx.restore(); } } }, scales: { y: { beginAtZero: true, max: 10, ticks: { display: false } }, x: { grid: { display: false } } } } }); };
+/* Main App Container */
+#app-container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
 
-// --- AUTHENTICATION LOGIC ---
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUser = user;
-        authContainer.hidden = true;
-        appContainer.hidden = false;
-        userEmailSpan.textContent = user.email;
-        initializeStatsDashboard();
-        loadHabits();
-        loadWeeklyPlan();
-        loadDailyReflection(); // ADDED
-    } else {
-        currentUser = null;
-        authContainer.hidden = false;
-        appContainer.hidden = true;
-        userEmailSpan.textContent = '';
-        if (habitsUnsubscribe) habitsUnsubscribe();
-        habitList.innerHTML = '';
-    }
-});
+.header { text-align: center; margin-bottom: 30px; }
+.header p { font-size: 1.1em; color: var(--text-dark-secondary); }
+#logout-btn { background: none; border: 1px solid var(--border-light); color: var(--text-dark-secondary); padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: 10px; }
 
-// Auth form listeners (no changes)
-signupForm.addEventListener('submit', (e) => { e.preventDefault(); createUserWithEmailAndPassword(auth, document.getElementById('signup-email').value, document.getElementById('signup-password').value).then(() => signupForm.reset()).catch(err => alert(err.message)); });
-loginForm.addEventListener('submit', (e) => { e.preventDefault(); signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-password').value).then(() => loginForm.reset()).catch(err => alert(err.message)); });
-logoutBtn.addEventListener('click', () => signOut(auth));
+/* Stats Card */
+.stats-card { background-color: var(--card-light); border: 1px solid var(--border-light); border-radius: 12px; padding: 20px; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+.stats-header { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
+.stats-header select { background-color: var(--background-light); color: var(--text-dark-primary); border: 1px solid var(--border-light); border-radius: 6px; padding: 5px; }
+.chart-container { position: relative; height: 250px; }
 
-// --- HABIT TRACKER LOGIC ---
-const loadHabits = () => { /* ... (no changes) ... */ if (!currentUser) return; const q = query(collection(db, 'habits'), where("uid", "==", currentUser.uid)); habitsUnsubscribe = onSnapshot(q, (snapshot) => { habitList.innerHTML = ''; snapshot.forEach(renderHabit); }); };
-const renderHabit = (doc) => { /* ... (no changes) ... */ const habit = doc.data(); const li = document.createElement('li'); li.className = 'habit-item'; li.dataset.id = doc.id; if (habit.completed) li.classList.add('completed'); li.innerHTML = `<span class="habit-text">${habit.text}</span><div class="actions"><button class="complete-btn"><i class="fas fa-check-circle"></i></button><button class="delete-btn"><i class="fas fa-trash"></i></button></div>`; habitList.appendChild(li); };
-habitForm.addEventListener('submit', async (e) => { /* ... (no changes) ... */ e.preventDefault(); const habitText = habitInput.value.trim(); if (habitText !== '' && currentUser) { await addDoc(collection(db, 'habits'), { text: habitText, completed: false, uid: currentUser.uid }); habitInput.value = ''; } });
-habitList.addEventListener('click', async (e) => { /* ... (no changes) ... */ const target = e.target.closest('button'); if (!target) return; const li = target.closest('.habit-item'); const docRef = doc(db, 'habits', li.dataset.id); if (target.classList.contains('delete-btn')) { await deleteDoc(docRef); } else if (target.classList.contains('complete-btn')) { await updateDoc(docRef, { completed: !li.classList.contains('completed') }); } });
+/* Content Grid */
+.content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
 
-// --- WEEKLY RITUAL LOGIC ---
-const loadWeeklyPlan = async () => { /* ... (no changes) ... */ if (!currentUser) return; const weekId = getWeekId(); const docRef = doc(db, 'weeklyPlans', `${currentUser.uid}_${weekId}`); const docSnap = await getDoc(docRef); if (docSnap.exists()) { const plan = docSnap.data(); weeklyPlanForm.hidden = true; weeklyPlanDisplay.hidden = false; document.getElementById('display-focus').textContent = plan.focus; document.getElementById('display-vibe').textContent = plan.vibe; const prioritiesList = document.getElementById('display-priorities'); prioritiesList.innerHTML = ''; plan.priorities.forEach(p => { const li = document.createElement('li'); li.textContent = p; prioritiesList.appendChild(li); }); document.getElementById('week-focus').value = plan.focus; document.getElementById('priority-1').value = plan.priorities[0] || ''; document.getElementById('priority-2').value = plan.priorities[1] || ''; document.getElementById('priority-3').value = plan.priorities[2] || ''; document.getElementById('week-vibe').value = plan.vibe; } else { weeklyPlanForm.hidden = false; weeklyPlanDisplay.hidden = true; weeklyPlanForm.reset(); } };
-weeklyPlanForm.addEventListener('submit', async (e) => { /* ... (no changes) ... */ e.preventDefault(); if (!currentUser) return; const weekId = getWeekId(); const docRef = doc(db, 'weeklyPlans', `${currentUser.uid}_${weekId}`); const planData = { uid: currentUser.uid, weekId: weekId, focus: document.getElementById('week-focus').value, priorities: [document.getElementById('priority-1').value, document.getElementById('priority-2').value, document.getElementById('priority-3').value,], vibe: document.getElementById('week-vibe').value, }; await setDoc(docRef, planData, { merge: true }); loadWeeklyPlan(); });
-editPlanBtn.addEventListener('click', () => { /* ... (no changes) ... */ weeklyPlanForm.hidden = false; weeklyPlanDisplay.hidden = true; });
+.card { background-color: var(--card-light); border: 1px solid var(--border-light); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+.card h2 { text-align: center; margin-top: 0; color: var(--text-dark-primary); }
+.card p, .card li, .habit-text {
+    line-height: 1.6;
+    font-size: 16px;
+}
 
-// --- NEW DAILY REFLECTION LOGIC ---
-const loadDailyReflection = async () => {
-    if (!currentUser) return;
-    const dayId = getDayId();
-    const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`);
-    const docSnap = await getDoc(docRef);
+/* Habit Form & List Styles */
+#habit-form { display: flex; gap: 10px; margin-bottom: 25px; }
+#habit-input { flex-grow: 1; padding: 12px; background-color: var(--background-light); border: 1px solid var(--border-light); color: var(--text-dark-primary); border-radius: 8px; font-size: 16px; }
+#habit-form button { background-color: var(--accent-blue); }
+#habit-list { list-style: none; padding: 0; margin: 0; text-align: left; }
+.habit-item { display: flex; align-items: center; justify-content: space-between; background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid var(--accent-blue); }
+.habit-item.completed { border-left-color: var(--accent-green); background-color: #E8F8EF; }
+.habit-item.completed .habit-text { text-decoration: line-through; color: var(--text-dark-muted); }
+.habit-item .actions button { background: none; border: none; color: var(--text-dark-muted); cursor: pointer; font-size: 18px; margin-left: 10px; }
+.habit-item .actions .delete-btn:hover { color: var(--accent-red); }
+.habit-item .actions .complete-btn:hover { color: var(--accent-green); }
 
-    if (docSnap.exists()) {
-        const reflection = docSnap.data();
-        reflectionForm.hidden = true;
-        reflectionDisplay.hidden = false;
-        displayReflectionText.textContent = reflection.text;
-        reflectionInput.value = reflection.text; // Pre-fill form for editing
-    } else {
-        reflectionForm.hidden = false;
-        reflectionDisplay.hidden = true;
-        reflectionForm.reset();
-    }
-};
+/* Weekly Ritual Card Styles */
+#weekly-ritual-card label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: var(--text-dark-secondary); }
+#weekly-ritual-card input[type="text"] { width: 100%; padding: 10px; background-color: var(--background-light); border: 1px solid var(--border-light); color: var(--text-dark-primary); border-radius: 6px; box-sizing: border-box; margin-bottom: 5px; }
+#weekly-ritual-card button { display: block; width: 100%; margin-top: 20px; background-color: var(--accent-orange); color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+#weekly-plan-display h4 { margin-top: 15px; margin-bottom: 5px; color: var(--text-dark-secondary); }
+#weekly-plan-display p, #weekly-plan-display ul { margin: 0; padding-left: 0; list-style-position: inside; }
 
-reflectionForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!currentUser) return;
-    const reflectionText = reflectionInput.value.trim();
-    if (reflectionText === '') return;
+/* --- NEW: Daily Reflection Card Styles --- */
+#reflection-card label {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 8px; /* Slightly more space */
+    font-weight: bold;
+    color: var(--text-dark-secondary);
+    font-size: 1.05em; /* Slightly larger font */
+}
 
-    const dayId = getDayId();
-    const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`);
-    
-    await setDoc(docRef, {
-        uid: currentUser.uid,
-        dayId: dayId,
-        text: reflectionText,
-        weekId: getWeekId(), // Also store the week ID for later analysis
-    }, { merge: true });
+#reflection-input {
+    width: 100%;
+    padding: 12px; /* Increased padding */
+    background-color: var(--background-light);
+    border: 1px solid var(--border-light);
+    color: var(--text-dark-primary);
+    border-radius: 8px; /* More rounded corners */
+    box-sizing: border-box;
+    font-size: 16px;
+    line-height: 1.5; /* Better readability for paragraphs */
+    min-height: 120px; /* Ensure enough space for writing */
+    resize: vertical; /* Allow vertical resizing only */
+}
 
-    loadDailyReflection(); // Reload to show the display view
-});
+#reflection-form button {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+    background-color: var(--accent-teal); /* Using teal for reflections */
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.2s ease; /* Smooth hover effect */
+}
+#reflection-form button:hover {
+    background-color: #24bfae; /* Slightly darker teal on hover */
+}
 
-editReflectionBtn.addEventListener('click', () => {
-    reflectionForm.hidden = false;
-    reflectionDisplay.hidden = true;
-});
+#reflection-display {
+    padding-top: 10px;
+}
+
+#display-reflection-text {
+    font-size: 17px;
+    line-height: 1.7; /* Good line height for comfortable reading */
+    color: var(--text-dark-primary);
+    margin-bottom: 15px;
+}
+
+#edit-reflection-btn {
+    background-color: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-dark-secondary);
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+    float: right; /* Align to the right */
+}
+#edit-reflection-btn:hover {
+    background-color: var(--background-light);
+}
