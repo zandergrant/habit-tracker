@@ -1,13 +1,13 @@
-/* --- OURA-INSPIRED STYLE REFRESH --- */
+/* --- PREMIUM LIGHT THEME --- */
 
 :root {
-    /* Define our new color palette */
-    --background-dark: #10182B;
-    --card-dark: #1D2939;
-    --border-dark: #344054;
-    --text-primary: #F2F4F7;
-    --text-secondary: #CDD5E0; /* UPDATED: Increased brightness for better contrast */
-    --text-muted: #98A2B3; /* Old secondary color, now used for less important text */
+    /* Define our new light theme color palette */
+    --background-light: #F9FAFB;
+    --card-light: #FFFFFF;
+    --border-light: #E5E7EB;
+    --text-dark-primary: #1F2937;
+    --text-dark-secondary: #6B7280;
+    --text-dark-muted: #9CA3AF;
     --accent-blue: #5D9CEC;
     --accent-teal: #29D6C5;
     --accent-orange: #FDAB73;
@@ -18,61 +18,59 @@
 /* General Body Styles */
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: var(--background-dark);
-    color: var(--text-primary);
+    background-color: var(--background-light);
+    color: var(--text-dark-primary);
     margin: 0;
 }
 
 /* Auth Container (Login Page) */
 #auth-container { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
-#auth-container form { background-color: var(--card-dark); padding: 30px 40px; border-radius: 12px; border: 1px solid var(--border-dark); width: 100%; max-width: 400px; text-align: center; }
+#auth-container form { background-color: var(--card-light); padding: 30px 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; text-align: center; }
 #auth-container h1 { font-size: 2em; margin-bottom: 20px; }
-#auth-container h2 { margin-top: 0; color: var(--text-primary); }
-#auth-container input { width: 100%; padding: 12px; margin-bottom: 10px; background-color: var(--background-dark); border: 1px solid var(--border-dark); color: var(--text-primary); border-radius: 8px; box-sizing: border-box; }
+#auth-container h2 { margin-top: 0; color: var(--text-dark-primary); }
+#auth-container input { width: 100%; padding: 12px; margin-bottom: 10px; background-color: var(--background-light); border: 1px solid var(--border-light); color: var(--text-dark-primary); border-radius: 8px; box-sizing: border-box; }
 #auth-container button { width: 100%; padding: 12px; background-color: var(--accent-blue); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
-#auth-container hr { width: 100%; max-width: 400px; border: none; border-top: 1px solid var(--border-dark); margin: 25px 0; }
+#auth-container hr { width: 100%; max-width: 400px; border: none; border-top: 1px solid var(--border-light); margin: 25px 0; }
 #auth-container[hidden] { display: none; }
 
 /* Main App Container */
 #app-container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
 
 .header { text-align: center; margin-bottom: 30px; }
-.header p { font-size: 1.1em; color: var(--text-muted); }
-#logout-btn { background: none; border: 1px solid var(--border-dark); color: var(--text-muted); padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: 10px; }
+.header p { font-size: 1.1em; color: var(--text-dark-secondary); }
+#logout-btn { background: none; border: 1px solid var(--border-light); color: var(--text-dark-secondary); padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: 10px; }
 
 /* Stats Card */
-.stats-card { background-color: var(--card-dark); border: 1px solid var(--border-dark); border-radius: 12px; padding: 20px; margin-bottom: 30px; }
+.stats-card { background-color: var(--card-light); border: 1px solid var(--border-light); border-radius: 12px; padding: 20px; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
 .stats-header { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
-.stats-header select { background-color: var(--background-dark); color: var(--text-primary); border: 1px solid var(--border-dark); border-radius: 6px; padding: 5px; }
+.stats-header select { background-color: var(--background-light); color: var(--text-dark-primary); border: 1px solid var(--border-light); border-radius: 6px; padding: 5px; }
 .chart-container { position: relative; height: 250px; }
 
 /* Content Grid */
 .content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
 
-.card { background-color: var(--card-dark); border: 1px solid var(--border-dark); padding: 20px; border-radius: 12px; }
-.card h2 { text-align: center; margin-top: 0; color: var(--text-primary); }
-/* ADDED: General styles for text inside cards for better spacing */
+.card { background-color: var(--card-light); border: 1px solid var(--border-light); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+.card h2 { text-align: center; margin-top: 0; color: var(--text-dark-primary); }
 .card p, .card li, .habit-text {
     line-height: 1.6;
     font-size: 16px;
 }
 
-
 /* Habit Form & List Styles */
 #habit-form { display: flex; gap: 10px; margin-bottom: 25px; }
-#habit-input { flex-grow: 1; padding: 12px; background-color: var(--background-dark); border: 1px solid var(--border-dark); color: var(--text-primary); border-radius: 8px; font-size: 16px; }
+#habit-input { flex-grow: 1; padding: 12px; background-color: var(--background-light); border: 1px solid var(--border-light); color: var(--text-dark-primary); border-radius: 8px; font-size: 16px; }
 #habit-form button { background-color: var(--accent-blue); }
 #habit-list { list-style: none; padding: 0; margin: 0; text-align: left; }
-.habit-item { display: flex; align-items: center; justify-content: space-between; background-color: var(--background-dark); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid var(--accent-blue); }
-.habit-item.completed { border-left-color: var(--accent-green); background-color: #2F4F4F; }
-.habit-item.completed .habit-text { text-decoration: line-through; color: var(--text-muted); }
-.habit-item .actions button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; margin-left: 10px; }
+.habit-item { display: flex; align-items: center; justify-content: space-between; background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid var(--accent-blue); }
+.habit-item.completed { border-left-color: var(--accent-green); background-color: #E8F8EF; }
+.habit-item.completed .habit-text { text-decoration: line-through; color: var(--text-dark-muted); }
+.habit-item .actions button { background: none; border: none; color: var(--text-dark-muted); cursor: pointer; font-size: 18px; margin-left: 10px; }
 .habit-item .actions .delete-btn:hover { color: var(--accent-red); }
 .habit-item .actions .complete-btn:hover { color: var(--accent-green); }
 
 /* Weekly Ritual Card Styles */
-#weekly-ritual-card label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: var(--text-secondary); }
-#weekly-ritual-card input[type="text"] { width: 100%; padding: 10px; background-color: var(--background-dark); border: 1px solid var(--border-dark); color: var(--text-primary); border-radius: 6px; box-sizing: border-box; margin-bottom: 5px; }
+#weekly-ritual-card label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: var(--text-dark-secondary); }
+#weekly-ritual-card input[type="text"] { width: 100%; padding: 10px; background-color: var(--background-light); border: 1px solid var(--border-light); color: var(--text-dark-primary); border-radius: 6px; box-sizing: border-box; margin-bottom: 5px; }
 #weekly-ritual-card button { display: block; width: 100%; margin-top: 20px; background-color: var(--accent-orange); color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
-#weekly-plan-display h4 { margin-top: 15px; margin-bottom: 5px; color: var(--text-secondary); }
-#weekly-plan-display p, #weekly-plan-display ul { margin: 0; padding-left: 0
+#weekly-plan-display h4 { margin-top: 15px; margin-bottom: 5px; color: var(--text-dark-secondary); }
+#weekly-plan-display p, #weekly-plan-display ul { margin: 0; padding-left: 0; list-style-position: inside; }
