@@ -5,9 +5,10 @@ body {
     color: #333;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start; /* Changed to flex-start for longer content */
     min-height: 100vh;
     margin: 0;
+    padding: 20px 0; /* Add padding for scroll */
 }
 
 /* Main Container */
@@ -26,93 +27,27 @@ h1 {
     margin-bottom: 25px;
 }
 
-/* Form Styles */
-#habit-form {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 25px;
+/* Authentication Container Styles */
+#auth-container {
+    background-color: #ffffff;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
 }
 
-#habit-input {
-    flex-grow: 1;
+#auth-container h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+#auth-container input {
+    width: 100%;
     padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    font-size: 16px;
-    transition: border-color 0.3s;
-}
-
-#habit-input:focus {
-    outline: none;
-    border-color: #5d9cec;
-}
-
-button[type="submit"] {
-    background-color: #5d9cec;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
-
-button[type="submit"]:hover {
-    background-color: #4a8cdb;
-}
-
-/* Habit List Styles */
-#habit-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    text-align: left;
-}
-
-.habit-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: #f9f9f9;
-    padding: 15px;
-    border-radius: 8px;
     margin-bottom: 10px;
-    border-left: 5px solid #5d9cec;
-    transition: all 0.3s ease;
-}
-
-.habit-item.completed {
-    border-left-color: #2ecc71;
-    background-color: #e8f8ef;
-}
-
-.habit-item.completed .habit-text {
-    text-decoration: line-through;
-    color: #95a5a6;
-}
-
-.habit-text {
-    flex-grow: 1;
-    cursor: pointer;
-    font-size: 17px;
-}
-
-.habit-item .actions button {
-    background: none;
-    border: none;
-    color: #95a5a6;
-    cursor: pointer;
-    font-size: 18px;
-    margin-left: 10px;
-    transition: color 0.3s;
-}
-
-.habit-item .actions .delete-btn:hover {
-    color: #e74c3c;
-}
-
-.habit-item .actions .complete-btn:hover {
-    color: #2ecc71;
-}
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-sizing: border-box
