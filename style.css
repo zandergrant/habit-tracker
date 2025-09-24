@@ -1,7 +1,7 @@
 /* --- PREMIUM LIGHT THEME --- */
 
 :root {
-    /* Define our new light theme color palette */
+    /* Define our light theme color palette */
     --background-light: #F9FAFB;
     --card-light: #FFFFFF;
     --border-light: #E5E7EB;
@@ -51,10 +51,7 @@ body {
 
 .card { background-color: var(--card-light); border: 1px solid var(--border-light); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
 .card h2 { text-align: center; margin-top: 0; color: var(--text-dark-primary); }
-.card p, .card li, .habit-text {
-    line-height: 1.6;
-    font-size: 16px;
-}
+.card p, .card li, .habit-text { line-height: 1.6; font-size: 16px; }
 
 /* Habit Form & List Styles */
 #habit-form { display: flex; gap: 10px; margin-bottom: 25px; }
@@ -74,3 +71,13 @@ body {
 #weekly-ritual-card button { display: block; width: 100%; margin-top: 20px; background-color: var(--accent-orange); color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
 #weekly-plan-display h4 { margin-top: 15px; margin-bottom: 5px; color: var(--text-dark-secondary); }
 #weekly-plan-display p, #weekly-plan-display ul { margin: 0; padding-left: 0; list-style-position: inside; }
+
+/* Daily Reflection Card Styles */
+#reflection-card label { display: block; margin-top: 15px; margin-bottom: 8px; font-weight: bold; color: var(--text-dark-secondary); font-size: 1.05em; }
+#reflection-input { width: 100%; padding: 12px; background-color: var(--background-light); border: 1px solid var(--border-light); color: var(--text-dark-primary); border-radius: 8px; box-sizing: border-box; font-size: 16px; line-height: 1.5; min-height: 120px; resize: vertical; }
+#reflection-form button { display: block; width: 100%; margin-top: 20px; background-color: var(--accent-teal); color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background-color 0.2s ease; }
+#reflection-form button:hover { background-color: #24bfae; }
+#reflection-display { padding-top: 10px; }
+#display-reflection-text { font-size: 17px; line-height: 1.7; color: var(--text-dark-primary); margin-bottom: 15px; }
+#edit-reflection-btn { background-color: transparent; border: 1px solid var(--border-light); color: var(--text-dark-secondary); padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 14px; margin-top: 10px; float: right; }
+#edit-reflection-btn:hover { background-color: var(--background-light); }
