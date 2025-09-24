@@ -98,3 +98,10 @@ body {
 #weekly-ritual-card button { display: block; width: 100%; margin-top: 20px; background-color: #fdab73; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
 #weekly-plan-display h4 { margin-top: 15px; margin-bottom: 5px; }
 #weekly-plan-display p, #weekly-plan-display ul { margin: 0; padding-left: 0; list-style-position: inside; }
+
+
+/* --- THIS IS THE FIX --- */
+/* This rule ensures the auth container is hidden when it's supposed to be */
+#auth-container[hidden] {
+    display: none;
+}
