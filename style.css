@@ -3,32 +3,21 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: #f4f7f9;
     color: #333;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start; /* Changed to flex-start for longer content */
-    min-height: 100vh;
     margin: 0;
-    padding: 20px 0; /* Add padding for scroll */
 }
 
-/* Main Container */
-.container {
-    background-color: #ffffff;
-    padding: 30px 40px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 500px;
-    text-align: center;
-}
-
-h1 {
-    color: #2c3e50;
-    margin-bottom: 25px;
-}
-
-/* Authentication Container Styles */
+/* Auth Container (Login Page) */
 #auth-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+#auth-container form {
     background-color: #ffffff;
     padding: 30px 40px;
     border-radius: 12px;
@@ -37,208 +26,75 @@ h1 {
     max-width: 400px;
     text-align: center;
 }
+#auth-container h1 { font-size: 2em; margin-bottom: 20px; }
+#auth-container h2 { margin-top: 0; }
+#auth-container input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+#auth-container button { width: 100%; padding: 12px; background-color: #5d9cec; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+#auth-container hr { width: 100%; max-width: 400px; border: none; border-top: 1px solid #eee; margin: 25px 0; }
 
-#auth-container h2 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #333;
-}
-
-#auth-container input {
+/* Main App Container */
+#app-container {
     width: 100%;
-    padding: 12px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
     box-sizing: border-box;
 }
 
-#auth-container button {
-    width: 100%;
-    padding: 12px;
-    background-color: #5d9cec;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
+.header {
+    text-align: center;
+    margin-bottom: 30px;
 }
+.header p { font-size: 1.1em; color: #555; }
+#logout-btn { background: none; border: 1px solid #ddd; color: #555; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: 10px; }
 
-#auth-container hr {
-    border: none;
-    border-top: 1px solid #eee;
-    margin: 25px 0;
+/* Stats Card */
+.stats-card {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
 }
-
-
-/* Form Styles */
-#habit-form {
+.stats-header {
     display: flex;
-    gap: 10px;
-    margin-bottom: 25px;
-}
-
-#habit-input {
-    flex-grow: 1;
-    padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    font-size: 16px;
-    transition: border-color 0.3s;
-}
-
-#habit-input:focus {
-    outline: none;
-    border-color: #5d9cec;
-}
-
-button[type="submit"] {
-    background-color: #5d9cec;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
-
-button[type="submit"]:hover {
-    background-color: #4a8cdb;
-}
-
-/* Logged In Header */
-#tracker-container p {
-    font-size: 16px;
-    color: #555;
-    margin-bottom: 20px;
-}
-
-#logout-btn {
-    background: none;
-    border: 1px solid #ddd;
-    color: #555;
-    padding: 5px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-left: 10px;
-}
-
-/* Habit List Styles */
-#habit-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    text-align: left;
-}
-
-.habit-item {
-    display: flex;
-    align-items: center;
     justify-content: space-between;
-    background-color: #f9f9f9;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    border-left: 5px solid #5d9cec;
-    transition: all 0.3s ease;
+    align-items: center;
+    padding: 0 10px;
+}
+.chart-container {
+    position: relative;
+    height: 250px;
 }
 
-.habit-item.completed {
-    border-left-color: #2ecc71;
-    background-color: #e8f8ef;
+/* Content Grid */
+.content-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
 }
 
-.habit-item.completed .habit-text {
-    text-decoration: line-through;
-    color: #95a5a6;
+.card {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
 }
+.card h2 { text-align: center; margin-top: 0; }
 
-.habit-text {
-    flex-grow: 1;
-    cursor: pointer;
-    font-size: 17px;
-}
-
-.habit-item .actions button {
-    background: none;
-    border: none;
-    color: #95a5a6;
-    cursor: pointer;
-    font-size: 18px;
-    margin-left: 10px;
-    transition: color 0.3s;
-}
-
-.habit-item .actions .delete-btn:hover {
-    color: #e74c3c;
-}
-
-.habit-item .actions .complete-btn:hover {
-    color: #2ecc71;
-}
+/* Habit Form & List Styles */
+#habit-form { display: flex; gap: 10px; margin-bottom: 25px; }
+#habit-input { flex-grow: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+#habit-list { list-style: none; padding: 0; margin: 0; text-align: left; }
+.habit-item { display: flex; align-items: center; justify-content: space-between; background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #5d9cec; }
+.habit-item.completed { border-left-color: #2ecc71; background-color: #e8f8ef; }
+.habit-item.completed .habit-text { text-decoration: line-through; color: #95a5a6; }
+.habit-text { flex-grow: 1; font-size: 17px; }
+.habit-item .actions button { background: none; border: none; color: #95a5a6; cursor: pointer; font-size: 18px; margin-left: 10px; }
 
 /* Weekly Ritual Card Styles */
-.weekly-ritual-card {
-    background-color: #fdfdfd;
-    border: 1px solid #eee;
-    border-left: 5px solid #fdab73; /* A new accent color */
-    border-radius: 8px;
-    padding: 20px;
-    margin-top: 30px;
-    text-align: left;
-}
-
-.weekly-ritual-card h2 {
-    text-align: center;
-    color: #333;
-    margin-top: 0;
-}
-
-.weekly-ritual-card label {
-    display: block;
-    margin-top: 15px;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #555;
-}
-
-.weekly-ritual-card input[type="text"] {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    box-sizing: border-box; /* Important for padding */
-    margin-bottom: 5px;
-}
-
-.weekly-ritual-card button {
-    display: block;
-    width: 100%;
-    margin-top: 20px;
-    background-color: #fdab73;
-    color: white;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-}
-.weekly-ritual-card button:hover {
-    background-color: #f99754;
-}
-
-#weekly-plan-display h4 {
-    margin-top: 15px;
-    margin-bottom: 5px;
-    color: #333;
-}
-
-#weekly-plan-display p, #weekly-plan-display ul {
-    margin: 0;
-    padding-left: 0;
-    list-style-position: inside;
-}
+#weekly-ritual-card label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: #555; }
+#weekly-ritual-card input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; margin-bottom: 5px; }
+#weekly-ritual-card button { display: block; width: 100%; margin-top: 20px; background-color: #fdab73; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+#weekly-plan-display h4 { margin-top: 15px; margin-bottom: 5px; }
+#weekly-plan-display p, #weekly-plan-display ul { margin: 0; padding-left: 0; list-style-position: inside; }
