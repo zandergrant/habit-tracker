@@ -123,3 +123,90 @@ body {
 .goal-item .actions button { background: none; border: none; color: var(--text-dark-muted); cursor: pointer; font-size: 18px; margin-left: 10px; }
 .goal-item .actions .delete-btn:hover { color: var(--accent-red); }
 .goal-item .actions .complete-btn:hover { color: var(--accent-green); }
+
+/* ... all existing styles from the light theme ... */
+
+/* ADD THESE NEW STYLES AT THE BOTTOM */
+
+/* Section Styles */
+.section-container {
+    margin-top: 40px;
+}
+
+.section-title {
+    font-size: 1.2em;
+    color: var(--text-dark-secondary);
+    margin-bottom: 15px;
+    padding-left: 10px;
+    border-left: 3px solid var(--accent-blue);
+}
+
+/* Daily Work Grid Layout */
+.daily-work-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* 2/3 and 1/3 width */
+    grid-template-rows: auto auto;
+    gap: 30px;
+}
+
+.card-large {
+    grid-column: 1 / 2; /* Takes the first column */
+}
+
+.card-small {
+    grid-column: 2 / 3; /* Takes the second column */
+}
+
+/* Counter Card Styles */
+.counter-number {
+    font-size: 3em;
+    font-weight: 700;
+    color: var(--accent-teal);
+    text-align: center;
+    margin: 10px 0;
+}
+.counter-label {
+    text-align: center;
+    color: var(--text-dark-muted);
+    margin: 0;
+}
+.card-small a {
+    display: block;
+    text-align: center;
+    margin-top: 15px;
+    color: var(--accent-blue);
+}
+
+/* Goal 'Why' Textarea */
+#goal-why-input {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background-color: var(--background-light);
+    border: 1px solid var(--border-light);
+    color: var(--text-dark-primary);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+/* Goal Display 'Why' Text */
+.goal-why {
+    font-size: 0.9em;
+    color: var(--text-dark-secondary);
+    padding-left: 15px;
+    margin-top: 5px;
+    border-left: 2px solid var(--border-light);
+}
+
+/* Responsive Grid for smaller screens */
+@media (max-width: 768px) {
+    .daily-work-grid {
+        grid-template-columns: 1fr; /* Stack everything in one column */
+    }
+    .card-large, .card-small {
+        grid-column: auto; /* Reset column spans */
+    }
+}
