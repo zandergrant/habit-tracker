@@ -7,7 +7,8 @@ import {
 } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 import {
     collection, addDoc, query, where, onSnapshot, doc,
-    deleteDoc, updateDoc, getDoc, setDoc, getDocs
+    deleteDoc, updateDoc, getDoc, setDoc, getDocs,
+    orderBy, limit
 } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 
 // --- Get DOM Elements ---
@@ -35,6 +36,8 @@ const goalList = document.getElementById('goal-list');
 const prevDayBtn = document.getElementById('prev-day-btn');
 const nextDayBtn = document.getElementById('next-day-btn');
 const currentDateDisplay = document.getElementById('current-date-display');
+const centerednessSlider = document.getElementById('centeredness-slider');
+const sliderValue = document.getElementById('slider-value');
 
 // --- STATE MANAGEMENT ---
 let currentUser = null;
@@ -61,8 +64,34 @@ const changeDate = (offset) => { selectedDate.setDate(selectedDate.getDate() + o
 prevDayBtn.addEventListener('click', () => changeDate(-1));
 nextDayBtn.addEventListener('click', () => changeDate(1));
 
-// --- CHART INITIALIZATION ---
-const initializeStatsDashboard = () => { const ctx = document.getElementById('stats-chart').getContext('2d'); if (statsChart) { statsChart.destroy(); } statsChart = new Chart(ctx, { type: 'line', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Weekly Vibe', data: [], borderColor: '#5d9cec', tension: 0.4, pointBackgroundColor: '#5d9cec', pointRadius: 5, }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: false }, legend: { display: false }, afterDraw: chart => { if (chart.data.datasets[0].data.length === 0) { let ctx = chart.ctx; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = "16px sans-serif"; ctx.fillStyle = '#aaa'; ctx.fillText('Not enough data to display a trend yet.', chart.width / 2, chart.height / 2); ctx.restore(); } } }, scales: { y: { beginAtZero: true, max: 10, ticks: { display: false } }, x: { grid: { display: false } } } } }); };
+// --- CHART LOGIC ---
+const populateStatsChart = async () => {
+    if (!currentUser) return;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 6);
+    const q = query(collection(db, 'reflections'), where("uid", "==", currentUser.uid), where("dayId", ">=", getDayId(startDate)), where("dayId", "<=", getDayId(endDate)), orderBy("dayId", "asc"));
+    const querySnapshot = await getDocs(q);
+    const reflectionsData = new Map();
+    querySnapshot.forEach(doc => {
+        reflectionsData.set(doc.data().dayId, doc.data().centeredness);
+    });
+    const labels = [];
+    const data = [];
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        const dayId = getDayId(date);
+        labels.push(date.toLocaleDateString(undefined, { weekday: 'short' }));
+        data.push(reflectionsData.get(dayId) || null);
+    }
+    if (statsChart) {
+        statsChart.data.labels = labels;
+        statsChart.data.datasets[0].data = data;
+        statsChart.update();
+    }
+};
+const initializeStatsDashboard = () => { const ctx = document.getElementById('stats-chart').getContext('2d'); if (statsChart) { statsChart.destroy(); } statsChart = new Chart(ctx, { type: 'line', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Weekly Vibe', data: [], borderColor: '#5d9cec', tension: 0.4, pointBackgroundColor: '#5d9cec', pointRadius: 5, }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: false }, legend: { display: false }, afterDraw: chart => { if (chart.data.datasets.every(ds => ds.data.every(val => val === null))) { let ctx = chart.ctx; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = "16px sans-serif"; ctx.fillStyle = '#aaa'; ctx.fillText('Not enough data to display a trend yet.', chart.width / 2, chart.height / 2); ctx.restore(); } } }, scales: { y: { beginAtZero: true, max: 10, ticks: { display: false } }, x: { grid: { display: false } } } } }); };
 
 // --- AUTHENTICATION LOGIC ---
 onAuthStateChanged(auth, (user) => {
@@ -74,6 +103,7 @@ onAuthStateChanged(auth, (user) => {
         selectedDate = new Date();
         updateDateDisplay();
         initializeStatsDashboard();
+        populateStatsChart();
         loadHabits();
         loadWeeklyPlan();
         loadDailyReflection();
@@ -107,31 +137,13 @@ weeklyPlanForm.addEventListener('submit', async (e) => { e.preventDefault(); if 
 editPlanBtn.addEventListener('click', () => { weeklyPlanForm.hidden = false; weeklyPlanDisplay.hidden = true; });
 
 // --- DAILY REFLECTION LOGIC ---
-const loadDailyReflection = async () => { if (!currentUser) return; const dayId = getDayId(selectedDate); const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`); const docSnap = await getDoc(docRef); if (docSnap.exists()) { const reflection = docSnap.data(); reflectionForm.hidden = true; reflectionDisplay.hidden = false; displayReflectionText.textContent = reflection.text; reflectionInput.value = reflection.text; } else { reflectionForm.hidden = false; reflectionDisplay.hidden = true; reflectionForm.reset(); } };
-reflectionForm.addEventListener('submit', async (e) => { e.preventDefault(); if (!currentUser) return; const reflectionText = reflectionInput.value.trim(); if (reflectionText === '') return; const dayId = getDayId(selectedDate); const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`); await setDoc(docRef, { uid: currentUser.uid, dayId: dayId, text: reflectionText, weekId: getWeekId(selectedDate), }, { merge: true }); loadDailyReflection(); });
+centerednessSlider.addEventListener('input', () => { sliderValue.textContent = centerednessSlider.value; });
+const loadDailyReflection = async () => { if (!currentUser) return; const dayId = getDayId(selectedDate); const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`); const docSnap = await getDoc(docRef); if (docSnap.exists()) { const reflection = docSnap.data(); reflectionForm.hidden = true; reflectionDisplay.hidden = false; displayReflectionText.textContent = reflection.text; reflectionInput.value = reflection.text; centerednessSlider.value = reflection.centeredness || 5; sliderValue.textContent = centerednessSlider.value; } else { reflectionForm.hidden = false; reflectionDisplay.hidden = true; reflectionForm.reset(); centerednessSlider.value = 5; sliderValue.textContent = '5'; } };
+reflectionForm.addEventListener('submit', async (e) => { e.preventDefault(); if (!currentUser) return; const dayId = getDayId(selectedDate); const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`); await setDoc(docRef, { uid: currentUser.uid, dayId: dayId, text: reflectionInput.value.trim(), centeredness: parseInt(centerednessSlider.value), weekId: getWeekId(selectedDate), }, { merge: true }); loadDailyReflection(); populateStatsChart(); });
 editReflectionBtn.addEventListener('click', () => { reflectionForm.hidden = false; reflectionDisplay.hidden = true; });
 
 // --- GOAL TRACKING LOGIC ---
 const loadGoals = () => { if (!currentUser) return; const q = query(collection(db, 'goals'), where("uid", "==", currentUser.uid)); goalsUnsubscribe = onSnapshot(q, (snapshot) => { goalList.innerHTML = ''; snapshot.forEach(renderGoal); }); };
-const renderGoal = (doc) => {
-    const goal = doc.data();
-    const li = document.createElement('li');
-    li.className = 'goal-item';
-    li.dataset.id = doc.id;
-    if (goal.completed) { li.classList.add('completed'); }
-    let whyHtml = '';
-    if (goal.why) { whyHtml = `<p class="goal-why">${goal.why}</p>`; }
-    li.innerHTML = `<div class="goal-content"><span class="goal-text">${goal.text}</span>${whyHtml}</div><div class="actions"><button class="complete-btn"><i class="fas fa-check-circle"></i></button><button class="delete-btn"><i class="fas fa-trash"></i></button></div>`;
-    goalList.appendChild(li);
-};
-goalForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const goalText = goalInput.value.trim();
-    const goalWhy = goalWhyInput.value.trim();
-    if (goalText !== '' && currentUser) {
-        await addDoc(collection(db, 'goals'), { text: goalText, why: goalWhy, completed: false, uid: currentUser.uid });
-        goalInput.value = '';
-        goalWhyInput.value = '';
-    }
-});
+const renderGoal = (doc) => { const goal = doc.data(); const li = document.createElement('li'); li.className = 'goal-item'; li.dataset.id = doc.id; if (goal.completed) { li.classList.add('completed'); } let whyHtml = ''; if (goal.why) { whyHtml = `<p class="goal-why">${goal.why}</p>`; } li.innerHTML = `<div class="goal-content"><span class="goal-text">${goal.text}</span>${whyHtml}</div><div class="actions"><button class="complete-btn"><i class="fas fa-check-circle"></i></button><button class="delete-btn"><i class="fas fa-trash"></i></button></div>`; goalList.appendChild(li); };
+goalForm.addEventListener('submit', async (e) => { e.preventDefault(); const goalText = goalInput.value.trim(); const goalWhy = goalWhyInput.value.trim(); if (goalText !== '' && currentUser) { await addDoc(collection(db, 'goals'), { text: goalText, why: goalWhy, completed: false, uid: currentUser.uid }); goalInput.value = ''; goalWhyInput.value = ''; } });
 goalList.addEventListener('click', async (e) => { const target = e.target.closest('button'); if (!target) return; const li = target.closest('.goal-item'); const docRef = doc(db, 'goals', li.dataset.id); if (target.classList.contains('delete-btn')) { await deleteDoc(docRef); } else if (target.classList.contains('complete-btn')) { const isCompleted = !li.classList.contains('completed'); await updateDoc(docRef, { completed: isCompleted }); } });
