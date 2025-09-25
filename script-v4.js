@@ -1,143 +1,196 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Habit Tracker</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-    <div id="auth-container">
-        <h1>Welcome to Habit Tracker</h1>
-        <form id="signup-form">
-            <h2>Sign Up</h2>
-            <input type="email" id="signup-email" placeholder="Email" required>
-            <input type="password" id="signup-password" placeholder="Password" required>
-            <button type="submit">Sign Up</button>
-        </form>
-        <hr>
-        <form id="login-form">
-            <h2>Login</h2>
-            <input type="email" id="login-email" placeholder="Email" required>
-            <input type="password" id="login-password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-    </div>
+import { auth, db } from './firebase-config.js';
+import { 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
+} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+import {
+    collection, addDoc, query, where, onSnapshot, doc,
+    deleteDoc, updateDoc, getDoc, setDoc, getDocs,
+    orderBy, limit
+} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 
-    <div id="app-container" hidden>
-        <div class="header">
-            <h1>Dashboard</h1>
-            <p>Welcome, <span id="user-email"></span>! <button id="logout-btn">Logout</button></p>
-        </div>
+// --- Get DOM Elements ---
+const authContainer = document.getElementById('auth-container');
+const appContainer = document.getElementById('app-container');
+const signupForm = document.getElementById('signup-form');
+const loginForm = document.getElementById('login-form');
+const logoutBtn = document.getElementById('logout-btn');
+const userEmailSpan = document.getElementById('user-email');
+const habitForm = document.getElementById('habit-form');
+const habitInput = document.getElementById('habit-input');
+const habitList = document.getElementById('habit-list');
+const weeklyPlanForm = document.getElementById('weekly-plan-form');
+const weeklyPlanDisplay = document.getElementById('weekly-plan-display');
+const editPlanBtn = document.getElementById('edit-plan-btn');
+const reflectionForm = document.getElementById('reflection-form');
+const reflectionInput = document.getElementById('reflection-input');
+const reflectionDisplay = document.getElementById('reflection-display');
+const displayReflectionText = document.getElementById('display-reflection-text');
+const editReflectionBtn = document.getElementById('edit-reflection-btn');
+const noReflectionMessage = document.getElementById('no-reflection-message');
+const goalForm = document.getElementById('goal-form');
+const goalInput = document.getElementById('goal-input');
+const goalWhyInput = document.getElementById('goal-why-input');
+const goalList = document.getElementById('goal-list');
+const prevDayBtn = document.getElementById('prev-day-btn');
+const nextDayBtn = document.getElementById('next-day-btn');
+const currentDateDisplay = document.getElementById('current-date-display');
+const centerednessSlider = document.getElementById('centeredness-slider');
+const sliderValue = document.getElementById('slider-value');
 
-        <div class="stats-card">
-            <div class="stats-header">
-                <h2>Centeredness Over Time</h2>
-                <select id="time-selection">
-                    <option value="weekly">Last 7 Days</option>
-                    <option value="monthly" disabled>Last 30 Days (coming soon)</option>
-                </select>
-            </div>
-            <div class="chart-container">
-                <canvas id="stats-chart"></canvas>
-            </div>
-        </div>
+// --- STATE MANAGEMENT ---
+let currentUser = null;
+let habitsUnsubscribe = null;
+let goalsUnsubscribe = null;
+let statsChart = null; 
+let selectedDate = new Date();
 
-        <div class="date-navigator">
-            <button id="prev-day-btn">&lt; Prev</button>
-            <h2 id="current-date-display">Today</h2>
-            <button id="next-day-btn">Next &gt;</button>
-        </div>
+// --- Helper Functions ---
+const getWeekId = (date = new Date()) => { const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())); const dayNum = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7); return `${d.getUTCFullYear()}-${weekNo}`; };
+const getDayId = (date = new Date()) => { const d = new Date(date.getTime()); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().split('T')[0]; };
 
-        <div class="section-container">
-            <h2 class="section-title">The Daily Work</h2>
-            <div class="daily-work-grid">
-                <div class="card card-large" id="reflection-card">
-                    <h3>Daily Reflection</h3>
-                    <form id="reflection-form">
-                        <label for="centeredness-slider">How centered do you feel today? <span id="slider-value">5</span>/10</label>
-                        <input type="range" id="centeredness-slider" min="1" max="10" value="5" required>
+// --- DATE NAVIGATION ---
+const updateDateDisplay = () => {
+    const todayId = getDayId(new Date());
+    const selectedId = getDayId(selectedDate);
+    let displayString = selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    if (selectedId === todayId) {
+        displayString = `Today, ${selectedDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`;
+    }
+    currentDateDisplay.textContent = displayString;
+};
+const changeDate = (offset) => { selectedDate.setDate(selectedDate.getDate() + offset); updateDateDisplay(); loadDailyReflection(); loadHabits(); };
+prevDayBtn.addEventListener('click', () => changeDate(-1));
+nextDayBtn.addEventListener('click', () => changeDate(1));
 
-                        <label for="reflection-input">What matters today? How are you feeling?</label>
-                        <textarea id="reflection-input" rows="4" placeholder="Optional: write your thoughts here..."></textarea>
-                        <button type="submit">Save</button>
-                    </form>
-                    <div id="reflection-display" hidden>
-                        <p id="display-reflection-text"></p>
-                        <button id="edit-reflection-btn">Edit</button>
-                    </div>
-                    <p id="no-reflection-message" hidden>No reflection was saved for this day.</p>
-                </div>
-                <div class="card card-small" id="reflection-counter-card">
-                    <h3>Reflection Streak</h3>
-                    <p class="counter-number" id="reflection-streak">0</p>
-                    <p class="counter-label">Days in a row</p>
-                    <a href="#" id="view-all-reflections">View Previous Reflections</a>
-                </div>
-                <div class="card card-large" id="habit-tracker-card">
-                    <h3>Daily Habits</h3>
-                    <form id="habit-form">
-                        <input type="text" id="habit-input" placeholder="Enter a new habit..." autocomplete="off">
-                        <button type="submit">Add Habit</button>
-                    </form>
-                    <ul id="habit-list"></ul>
-                </div>
-                <div class="card card-small" id="habits-counter-card">
-                    <h3>Habits Completed</h3>
-                    <p class="counter-number" id="habits-completed-today">0</p>
-                    <p class="counter-label">Days you've completed all habits</p>
-                </div>
-            </div>
-        </div>
+// --- CHART LOGIC ---
+const populateStatsChart = async () => {
+    if (!currentUser) return;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 6);
+    const q = query(collection(db, 'reflections'), where("uid", "==", currentUser.uid), where("dayId", ">=", getDayId(startDate)), where("dayId", "<=", getDayId(endDate)), orderBy("dayId", "asc"));
+    const querySnapshot = await getDocs(q);
+    const reflectionsData = new Map();
+    querySnapshot.forEach(doc => {
+        reflectionsData.set(doc.data().dayId, doc.data().centeredness);
+    });
+    const labels = [];
+    const data = [];
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        const dayId = getDayId(date);
+        labels.push(date.toLocaleDateString(undefined, { weekday: 'short' }));
+        data.push(reflectionsData.get(dayId) || null);
+    }
+    if (statsChart) {
+        statsChart.data.labels = labels;
+        statsChart.data.datasets[0].data = data;
+        statsChart.update();
+    }
+};
+const initializeStatsDashboard = () => { const ctx = document.getElementById('stats-chart').getContext('2d'); if (statsChart) { statsChart.destroy(); } statsChart = new Chart(ctx, { type: 'line', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Weekly Vibe', data: [], borderColor: '#5d9cec', tension: 0.4, pointBackgroundColor: '#5d9cec', pointRadius: 5, }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: false }, legend: { display: false }, afterDraw: chart => { if (chart.data.datasets.every(ds => ds.data.every(val => val === null))) { let ctx = chart.ctx; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = "16px sans-serif"; ctx.fillStyle = '#aaa'; ctx.fillText('Not enough data to display a trend yet.', chart.width / 2, chart.height / 2); ctx.restore(); } } }, scales: { y: { beginAtZero: true, max: 10, ticks: { display: false } }, x: { grid: { display: false } } } } }); };
 
-        <div class="section-container">
-            <h2 class="section-title">The Weekly Work</h2>
-            <div class="card" id="weekly-ritual-card">
-                <h3>Weekly Planning Ritual</h3>
-                <form id="weekly-plan-form">
-                    <label for="week-focus">What is your main focus this week?</label>
-                    <input type="text" id="week-focus" placeholder="e.g., Complete project proposal" required>
-                    <label>What are your top 3 priorities?</label>
-                    <input type="text" id="priority-1" placeholder="Priority #1" required>
-                    <input type="text" id="priority-2" placeholder="Priority #2" required>
-                    <input type="text" id="priority-3" placeholder="Priority #3" required>
-                    <label for="week-vibe">What's the vibe for the week?</label>
-                    <input type="text" id="week-vibe" placeholder="e.g., Focused and energized" required>
-                    <button type="submit">Save Weekly Plan</button>
-                </form>
-                <div id="weekly-plan-display" hidden>
-                    <h4>This Week's Focus:</h4>
-                    <p id="display-focus"></p>
-                    <h4>Top Priorities:</h4>
-                    <ul id="display-priorities"></ul>
-                    <h4>Vibe for the Week:</h4>
-                    <p id="display-vibe"></p>
-                    <button id="edit-plan-btn">Edit Plan</button>
-                </div>
-            </div>
-        </div>
+// --- AUTHENTICATION LOGIC ---
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        authContainer.hidden = true;
+        appContainer.hidden = false;
+        userEmailSpan.textContent = user.email;
+        selectedDate = new Date();
+        updateDateDisplay();
+        initializeStatsDashboard();
+        populateStatsChart();
+        loadHabits();
+        loadWeeklyPlan();
+        loadDailyReflection();
+        loadGoals();
+    } else {
+        currentUser = null;
+        authContainer.hidden = false;
+        appContainer.hidden = true;
+        userEmailSpan.textContent = '';
+        if (habitsUnsubscribe) habitsUnsubscribe();
+        if (goalsUnsubscribe) goalsUnsubscribe();
+        habitList.innerHTML = '';
+        goalList.innerHTML = '';
+    }
+});
 
-        <div class="section-container">
-            <h2 class="section-title">The Long Game</h2>
-            <div class="card" id="goal-tracker-card">
-                <h3>Intentional Goal Tracking</h3>
-                <form id="goal-form">
-                    <input type="text" id="goal-input" placeholder="Add a new long-term goal..." autocomplete="off">
-                    <textarea id="goal-why-input" placeholder="Why does this goal matter to you?" rows="3"></textarea>
-                    <button type="submit">Add Goal</button>
-                </form>
-                <ul id="goal-list"></ul>
-            </div>
-        </div>
-    </div>
+// Auth form listeners
+signupForm.addEventListener('submit', (e) => { e.preventDefault(); createUserWithEmailAndPassword(auth, document.getElementById('signup-email').value, document.getElementById('signup-password').value).then(() => signupForm.reset()).catch(err => alert(err.message)); });
+loginForm.addEventListener('submit', (e) => { e.preventDefault(); signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-password').value).then(() => loginForm.reset()).catch(err => alert(err.message)); });
+logoutBtn.addEventListener('click', () => signOut(auth));
 
-    <script type="module" src="script-v4.js"></script>
-</body>
-</html>
+// --- HABIT TRACKER LOGIC ---
+const loadHabits = async () => { if (!currentUser) return; const dayId = getDayId(selectedDate); const logQuery = query(collection(db, 'habitLog'), where("uid", "==", currentUser.uid), where("date", "==", dayId)); const logSnapshot = await getDocs(logQuery); const completedHabitIds = new Set(logSnapshot.docs.map(doc => doc.data().habitId)); const habitsQuery = query(collection(db, 'habits'), where("uid", "==", currentUser.uid)); if (habitsUnsubscribe) habitsUnsubscribe(); habitsUnsubscribe = onSnapshot(habitsQuery, (snapshot) => { habitList.innerHTML = ''; snapshot.forEach(doc => { renderHabit(doc, completedHabitIds); }); }); };
+const renderHabit = (doc, completedHabitIds) => { const habit = doc.data(); const habitId = doc.id; const isCompleted = completedHabitIds.has(habitId); const li = document.createElement('li'); li.className = 'habit-item'; li.dataset.id = habitId; if (isCompleted) { li.classList.add('completed'); } li.innerHTML = `<span class="habit-text">${habit.text}</span><div class="actions"><button class="complete-btn"><i class="fas fa-check-circle"></i></button><button class="delete-btn"><i class="fas fa-trash"></i></button></div>`; habitList.appendChild(li); };
+habitForm.addEventListener('submit', async (e) => { e.preventDefault(); const habitText = habitInput.value.trim(); if (habitText !== '' && currentUser) { await addDoc(collection(db, 'habits'), { text: habitText, uid: currentUser.uid }); habitInput.value = ''; } });
+habitList.addEventListener('click', async (e) => { if (!currentUser) return; const completeButton = e.target.closest('button.complete-btn'); const deleteButton = e.target.closest('button.delete-btn'); const li = e.target.closest('.habit-item'); if (!li) return; const habitId = li.dataset.id; if (deleteButton) { await deleteDoc(doc(db, 'habits', habitId)); } else if (completeButton) { const dayId = getDayId(selectedDate); const logDocId = `${currentUser.uid}_${habitId}_${dayId}`; const logDocRef = doc(db, 'habitLog', logDocId); if (li.classList.contains('completed')) { await deleteDoc(logDocRef); } else { await setDoc(logDocRef, { uid: currentUser.uid, habitId: habitId, date: dayId }); } loadHabits(); } });
+
+// --- WEEKLY RITUAL LOGIC ---
+const loadWeeklyPlan = async () => { if (!currentUser) return; const weekId = getWeekId(); const docRef = doc(db, 'weeklyPlans', `${currentUser.uid}_${weekId}`); const docSnap = await getDoc(docRef); if (docSnap.exists()) { const plan = docSnap.data(); weeklyPlanForm.hidden = true; weeklyPlanDisplay.hidden = false; document.getElementById('display-focus').textContent = plan.focus; document.getElementById('display-vibe').textContent = plan.vibe; const prioritiesList = document.getElementById('display-priorities'); prioritiesList.innerHTML = ''; plan.priorities.forEach(p => { const li = document.createElement('li'); li.textContent = p; prioritiesList.appendChild(li); }); document.getElementById('week-focus').value = plan.focus; document.getElementById('priority-1').value = plan.priorities[0] || ''; document.getElementById('priority-2').value = plan.priorities[1] || ''; document.getElementById('priority-3').value = plan.priorities[2] || ''; document.getElementById('week-vibe').value = plan.vibe; } else { weeklyPlanForm.hidden = false; weeklyPlanDisplay.hidden = true; weeklyPlanForm.reset(); } };
+weeklyPlanForm.addEventListener('submit', async (e) => { e.preventDefault(); if (!currentUser) return; const weekId = getWeekId(); const docRef = doc(db, 'weeklyPlans', `${currentUser.uid}_${weekId}`); const planData = { uid: currentUser.uid, weekId: weekId, focus: document.getElementById('week-focus').value, priorities: [document.getElementById('priority-1').value, document.getElementById('priority-2').value, document.getElementById('priority-3').value,], vibe: document.getElementById('week-vibe').value, }; await setDoc(docRef, planData, { merge: true }); loadWeeklyPlan(); });
+editPlanBtn.addEventListener('click', () => { weeklyPlanForm.hidden = false; weeklyPlanDisplay.hidden = true; });
+
+// --- DAILY REFLECTION LOGIC ---
+centerednessSlider.addEventListener('input', () => { sliderValue.textContent = centerednessSlider.value; });
+const loadDailyReflection = async () => {
+    if (!currentUser) return;
+    const todayId = getDayId(new Date());
+    const selectedId = getDayId(selectedDate);
+    const docRef = doc(db, 'reflections', `${currentUser.uid}_${selectedId}`);
+    const docSnap = await getDoc(docRef);
+
+    reflectionForm.hidden = true;
+    reflectionDisplay.hidden = true;
+    noReflectionMessage.hidden = true;
+
+    if (selectedId === todayId) {
+        reflectionForm.hidden = false;
+        if (docSnap.exists()) {
+            const reflection = docSnap.data();
+            reflectionInput.value = reflection.text;
+            centerednessSlider.value = reflection.centeredness || 5;
+        } else {
+            reflectionForm.reset();
+            centerednessSlider.value = 5;
+        }
+        sliderValue.textContent = centerednessSlider.value;
+    } else {
+        if (docSnap.exists()) {
+            const reflection = docSnap.data();
+            reflectionDisplay.hidden = false;
+            displayReflectionText.textContent = reflection.text;
+            editReflectionBtn.hidden = true; 
+        } else {
+            noReflectionMessage.hidden = false;
+        }
+    }
+};
+reflectionForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    const dayId = getDayId(selectedDate);
+    if (dayId !== getDayId(new Date())) {
+        alert("You can only save reflections for the current day.");
+        return;
+    }
+    const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`);
+    await setDoc(docRef, { uid: currentUser.uid, dayId: dayId, text: reflectionInput.value.trim(), centeredness: parseInt(centerednessSlider.value), weekId: getWeekId(selectedDate), }, { merge: true });
+    populateStatsChart();
+});
+editReflectionBtn.addEventListener('click', () => {
+    reflectionForm.hidden = false;
+    reflectionDisplay.hidden = true;
+});
+
+// --- GOAL TRACKING LOGIC ---
+const loadGoals = () => { if (!currentUser) return; const q = query(collection(db, 'goals'), where("uid", "==", currentUser.uid)); goalsUnsubscribe = onSnapshot(q, (snapshot) => { goalList.innerHTML = ''; snapshot.forEach(renderGoal); }); };
+const renderGoal = (doc) => { const goal = doc.data(); const li = document.createElement('li'); li.className = 'goal-item'; li.dataset.id = doc.id; if (goal.completed) { li.classList.add('completed'); } let whyHtml = ''; if (goal.why) { whyHtml = `<p class="goal-why">${goal.why}</p>`; } li.innerHTML = `<div class="goal-content"><span class="goal-text">${goal.text}</span>${whyHtml}</div><div class="actions"><button class="complete-btn"><i class="fas fa-check-circle"></i></button><button class="delete-btn"><i class="fas fa-trash"></i></button></div>`; goalList.appendChild(li); };
+goalForm.addEventListener('submit', async (e) => { e.preventDefault(); const goalText = goalInput.value.trim(); const goalWhy = goalWhyInput.value.trim(); if (goalText !== '' && currentUser) { await addDoc(collection(db, 'goals'), { text: goalText, why: goalWhy, completed: false, uid: currentUser.uid }); goalInput.value = ''; goalWhyInput.value = ''; } });
+goalList.addEventListener('click', async (e) => { const target = e.target.closest('button'); if (!target) return; const li = target.closest('.goal-item'); const docRef = doc(db, 'goals', li.dataset.id); if (target.classList.contains('delete-btn')) { await deleteDoc(docRef); } else if (target.classList.contains('complete-btn')) { const isCompleted = !li.classList.contains('completed'); await updateDoc(docRef, { completed: isCompleted }); } });
