@@ -41,35 +41,10 @@ body {
 #logout-btn { background: none; border: 1px solid var(--border-light); color: var(--text-dark-secondary); padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: 10px; }
 
 /* Date Navigator Styles */
-.date-navigator {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 30px;
-}
-.date-navigator h2 {
-    margin: 0;
-    color: var(--text-dark-primary);
-    font-size: 1.5em;
-    min-width: 250px;
-    text-align: center;
-}
-.date-navigator button {
-    background: var(--card-light);
-    border: 1px solid var(--border-light);
-    color: var(--text-dark-secondary);
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    transition: background-color 0.2s ease;
-}
-.date-navigator button:hover {
-    background-color: #fdfdfd;
-}
+.date-navigator { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 30px; }
+.date-navigator h2 { margin: 0; color: var(--text-dark-primary); font-size: 1.5em; min-width: 250px; text-align: center; }
+.date-navigator button { background: var(--card-light); border: 1px solid var(--border-light); color: var(--text-dark-secondary); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: background-color 0.2s ease; }
+.date-navigator button:hover { background-color: #fdfdfd; }
 
 /* Stats Card */
 .stats-card { background-color: var(--card-light); border: 1px solid var(--border-light); border-radius: 12px; padding: 20px; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
@@ -77,11 +52,22 @@ body {
 .stats-header select { background-color: var(--background-light); color: var(--text-dark-primary); border: 1px solid var(--border-light); border-radius: 6px; padding: 5px; }
 .chart-container { position: relative; height: 250px; }
 
-/* Content Grid */
-.content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+/* Section Styles */
+.section-container { margin-top: 40px; }
+.section-title { font-size: 1.2em; color: var(--text-dark-secondary); margin-bottom: 15px; padding-left: 10px; border-left: 3px solid var(--accent-blue); }
+
+/* Daily Work Grid Layout */
+.daily-work-grid { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: auto auto; gap: 30px; }
+.card-large { grid-column: 1 / 2; }
+.card-small { grid-column: 2 / 3; }
+
+/* Counter Card Styles */
+.counter-number { font-size: 3em; font-weight: 700; color: var(--accent-teal); text-align: center; margin: 10px 0; }
+.counter-label { text-align: center; color: var(--text-dark-muted); margin: 0; }
+.card-small a { display: block; text-align: center; margin-top: 15px; color: var(--accent-blue); }
 
 .card { background-color: var(--card-light); border: 1px solid var(--border-light); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
-.card h2 { text-align: center; margin-top: 0; color: var(--text-dark-primary); }
+.card h3 { text-align: center; margin-top: 0; color: var(--text-dark-primary); } /* Changed from h2 */
 .card p, .card li, .habit-text { line-height: 1.6; font-size: 16px; }
 
 /* Habit Form & List Styles */
@@ -114,92 +100,19 @@ body {
 #edit-reflection-btn:hover { background-color: var(--background-light); }
 
 /* Goal Tracking Card Styles */
-#goal-form { display: flex; gap: 10px; margin-bottom: 25px; }
+#goal-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
 #goal-input { flex-grow: 1; padding: 12px; background-color: var(--background-light); border: 1px solid var(--border-light); color: var(--text-dark-primary); border-radius: 8px; font-size: 16px; }
+#goal-why-input { width: 100%; padding: 12px; background-color: var(--background-light); border: 1px solid var(--border-light); color: var(--text-dark-primary); border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box; }
 #goal-form button { background-color: var(--accent-teal); }
 #goal-list { list-style: none; padding: 0; margin: 0; text-align: left; }
-.goal-item { display: flex; align-items: center; justify-content: space-between; background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid var(--accent-teal); font-size: 17px; line-height: 1.6; }
-.goal-item.completed { border-left-color: var(--accent-green); background-color: #E8F8EF; text-decoration: line-through; color: var(--text-dark-muted); }
+.goal-item { display: flex; align-items: flex-start; justify-content: space-between; background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid var(--accent-teal); }
+.goal-item.completed .goal-content { text-decoration: line-through; color: var(--text-dark-muted); }
+.goal-content { display: flex; flex-direction: column; flex-grow: 1; }
+.goal-text { font-size: 17px; font-weight: 500; }
+.goal-why { font-size: 0.9em; color: var(--text-dark-secondary); padding-left: 15px; margin-top: 5px; border-left: 2px solid var(--border-light); }
 .goal-item .actions button { background: none; border: none; color: var(--text-dark-muted); cursor: pointer; font-size: 18px; margin-left: 10px; }
 .goal-item .actions .delete-btn:hover { color: var(--accent-red); }
 .goal-item .actions .complete-btn:hover { color: var(--accent-green); }
-
-/* ... all existing styles from the light theme ... */
-
-/* ADD THESE NEW STYLES AT THE BOTTOM */
-
-/* Section Styles */
-.section-container {
-    margin-top: 40px;
-}
-
-.section-title {
-    font-size: 1.2em;
-    color: var(--text-dark-secondary);
-    margin-bottom: 15px;
-    padding-left: 10px;
-    border-left: 3px solid var(--accent-blue);
-}
-
-/* Daily Work Grid Layout */
-.daily-work-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr; /* 2/3 and 1/3 width */
-    grid-template-rows: auto auto;
-    gap: 30px;
-}
-
-.card-large {
-    grid-column: 1 / 2; /* Takes the first column */
-}
-
-.card-small {
-    grid-column: 2 / 3; /* Takes the second column */
-}
-
-/* Counter Card Styles */
-.counter-number {
-    font-size: 3em;
-    font-weight: 700;
-    color: var(--accent-teal);
-    text-align: center;
-    margin: 10px 0;
-}
-.counter-label {
-    text-align: center;
-    color: var(--text-dark-muted);
-    margin: 0;
-}
-.card-small a {
-    display: block;
-    text-align: center;
-    margin-top: 15px;
-    color: var(--accent-blue);
-}
-
-/* Goal 'Why' Textarea */
-#goal-why-input {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    background-color: var(--background-light);
-    border: 1px solid var(--border-light);
-    color: var(--text-dark-primary);
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: inherit;
-    resize: vertical;
-    box-sizing: border-box;
-}
-
-/* Goal Display 'Why' Text */
-.goal-why {
-    font-size: 0.9em;
-    color: var(--text-dark-secondary);
-    padding-left: 15px;
-    margin-top: 5px;
-    border-left: 2px solid var(--border-light);
-}
 
 /* Responsive Grid for smaller screens */
 @media (max-width: 768px) {
