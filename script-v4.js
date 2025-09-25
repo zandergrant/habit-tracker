@@ -66,32 +66,7 @@ prevDayBtn.addEventListener('click', () => changeDate(-1));
 nextDayBtn.addEventListener('click', () => changeDate(1));
 
 // --- CHART LOGIC ---
-const populateStatsChart = async () => {
-    if (!currentUser) return;
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 6);
-    const q = query(collection(db, 'reflections'), where("uid", "==", currentUser.uid), where("dayId", ">=", getDayId(startDate)), where("dayId", "<=", getDayId(endDate)), orderBy("dayId", "asc"));
-    const querySnapshot = await getDocs(q);
-    const reflectionsData = new Map();
-    querySnapshot.forEach(doc => {
-        reflectionsData.set(doc.data().dayId, doc.data().centeredness);
-    });
-    const labels = [];
-    const data = [];
-    for (let i = 0; i < 7; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        const dayId = getDayId(date);
-        labels.push(date.toLocaleDateString(undefined, { weekday: 'short' }));
-        data.push(reflectionsData.get(dayId) || null);
-    }
-    if (statsChart) {
-        statsChart.data.labels = labels;
-        statsChart.data.datasets[0].data = data;
-        statsChart.update();
-    }
-};
+const populateStatsChart = async () => { if (!currentUser) return; const endDate = new Date(); const startDate = new Date(); startDate.setDate(endDate.getDate() - 6); const q = query(collection(db, 'reflections'), where("uid", "==", currentUser.uid), where("dayId", ">=", getDayId(startDate)), where("dayId", "<=", getDayId(endDate)), orderBy("dayId", "asc")); const querySnapshot = await getDocs(q); const reflectionsData = new Map(); querySnapshot.forEach(doc => { reflectionsData.set(doc.data().dayId, doc.data().centeredness); }); const labels = []; const data = []; for (let i = 0; i < 7; i++) { const date = new Date(startDate); date.setDate(startDate.getDate() + i); const dayId = getDayId(date); labels.push(date.toLocaleDateString(undefined, { weekday: 'short' })); data.push(reflectionsData.get(dayId) || null); } if (statsChart) { statsChart.data.labels = labels; statsChart.data.datasets[0].data = data; statsChart.update(); } };
 const initializeStatsDashboard = () => { const ctx = document.getElementById('stats-chart').getContext('2d'); if (statsChart) { statsChart.destroy(); } statsChart = new Chart(ctx, { type: 'line', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Weekly Vibe', data: [], borderColor: '#5d9cec', tension: 0.4, pointBackgroundColor: '#5d9cec', pointRadius: 5, }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: false }, legend: { display: false }, afterDraw: chart => { if (chart.data.datasets.every(ds => ds.data.every(val => val === null))) { let ctx = chart.ctx; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = "16px sans-serif"; ctx.fillStyle = '#aaa'; ctx.fillText('Not enough data to display a trend yet.', chart.width / 2, chart.height / 2); ctx.restore(); } } }, scales: { y: { beginAtZero: true, max: 10, ticks: { display: false } }, x: { grid: { display: false } } } } }); };
 
 // --- AUTHENTICATION LOGIC ---
