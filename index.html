@@ -37,23 +37,23 @@
             <p>Welcome, <span id="user-email"></span>! <button id="logout-btn">Logout</button></p>
         </div>
 
+        <div class="date-navigator">
+            <button id="prev-day-btn">&lt; Prev</button>
+            <h2 id="current-date-display">Today</h2>
+            <button id="next-day-btn">Next &gt;</button>
+        </div>
+
         <div class="stats-card">
             <div class="stats-header">
-                <h2>Your Progress</h2>
+                <h2>Centeredness Over Time</h2>
                 <select id="time-selection">
-                    <option value="weekly">This Week</option>
-                    <option value="monthly">This Month</option>
+                    <option value="weekly">Last 7 Days</option>
+                    <option value="monthly" disabled>Last 30 Days (coming soon)</option>
                 </select>
             </div>
             <div class="chart-container">
                 <canvas id="stats-chart"></canvas>
             </div>
-        </div>
-
-        <div class="date-navigator">
-            <button id="prev-day-btn">&lt; Prev</button>
-            <h2 id="current-date-display">Today</h2>
-            <button id="next-day-btn">Next &gt;</button>
         </div>
 
         <div class="section-container">
@@ -62,8 +62,11 @@
                 <div class="card card-large" id="reflection-card">
                     <h3>Daily Reflection</h3>
                     <form id="reflection-form">
+                        <label for="centeredness-slider">How centered do you feel today? <span id="slider-value">5</span>/10</label>
+                        <input type="range" id="centeredness-slider" min="1" max="10" value="5" required>
+
                         <label for="reflection-input">What matters today? How are you feeling?</label>
-                        <textarea id="reflection-input" rows="5" placeholder="Write your thoughts here..." required></textarea>
+                        <textarea id="reflection-input" rows="4" placeholder="Optional: write your thoughts here..."></textarea>
                         <button type="submit">Save</button>
                     </form>
                     <div id="reflection-display" hidden>
@@ -75,7 +78,7 @@
                     <h3>Reflection Streak</h3>
                     <p class="counter-number" id="reflection-streak">0</p>
                     <p class="counter-label">Days in a row</p>
-                    <a href="#" id="view-all-reflections">View All</a>
+                    <a href="#" id="view-all-reflections">View Previous Reflections</a>
                 </div>
                 <div class="card card-large" id="habit-tracker-card">
                     <h3>Daily Habits</h3>
@@ -88,7 +91,7 @@
                 <div class="card card-small" id="habits-counter-card">
                     <h3>Habits Completed</h3>
                     <p class="counter-number" id="habits-completed-today">0</p>
-                    <p class="counter-label">Today</p>
+                    <p class="counter-label">Days you've completed all habits</p>
                 </div>
             </div>
         </div>
