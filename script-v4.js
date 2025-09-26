@@ -37,8 +37,16 @@ const goalList = document.getElementById('goal-list');
 const prevDayBtn = document.getElementById('prev-day-btn');
 const nextDayBtn = document.getElementById('next-day-btn');
 const currentDateDisplay = document.getElementById('current-date-display');
+const metricSelection = document.getElementById('metric-selection');
 const centerednessSlider = document.getElementById('centeredness-slider');
-const sliderValue = document.getElementById('slider-value');
+const centerednessValue = document.getElementById('centeredness-value');
+const intentionalitySlider = document.getElementById('intentionality-slider');
+const intentionalityValue = document.getElementById('intentionality-value');
+const connectionSlider = document.getElementById('connection-slider');
+const connectionValue = document.getElementById('connection-value');
+const movementSlider = document.getElementById('movement-slider');
+const movementValue = document.getElementById('movement-value');
+
 
 // --- STATE MANAGEMENT ---
 let currentUser = null;
@@ -66,7 +74,38 @@ prevDayBtn.addEventListener('click', () => changeDate(-1));
 nextDayBtn.addEventListener('click', () => changeDate(1));
 
 // --- CHART LOGIC ---
-const populateStatsChart = async () => { if (!currentUser) return; const endDate = new Date(); const startDate = new Date(); startDate.setDate(endDate.getDate() - 6); const q = query(collection(db, 'reflections'), where("uid", "==", currentUser.uid), where("dayId", ">=", getDayId(startDate)), where("dayId", "<=", getDayId(endDate)), orderBy("dayId", "asc")); const querySnapshot = await getDocs(q); const reflectionsData = new Map(); querySnapshot.forEach(doc => { reflectionsData.set(doc.data().dayId, doc.data().centeredness); }); const labels = []; const data = []; for (let i = 0; i < 7; i++) { const date = new Date(startDate); date.setDate(startDate.getDate() + i); const dayId = getDayId(date); labels.push(date.toLocaleDateString(undefined, { weekday: 'short' })); data.push(reflectionsData.get(dayId) || null); } if (statsChart) { statsChart.data.labels = labels; statsChart.data.datasets[0].data = data; statsChart.update(); } };
+const populateStatsChart = async () => {
+    if (!currentUser) return;
+    const metric = metricSelection.value;
+    const metricLabel = metric.charAt(0).toUpperCase() + metric.slice(1);
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 6);
+    const q = query(collection(db, 'reflections'), where("uid", "==", currentUser.uid), where("dayId", ">=", getDayId(startDate)), orderBy("dayId", "asc"));
+    const querySnapshot = await getDocs(q);
+    const reflectionsData = new Map();
+    querySnapshot.forEach(doc => {
+        if(doc.data().pulse && doc.data().pulse[metric] !== undefined) {
+            reflectionsData.set(doc.data().dayId, doc.data().pulse[metric]);
+        }
+    });
+    const labels = [];
+    const data = [];
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        const dayId = getDayId(date);
+        labels.push(date.toLocaleDateString(undefined, { weekday: 'short' }));
+        data.push(reflectionsData.get(dayId) || null);
+    }
+    if (statsChart) {
+        statsChart.data.labels = labels;
+        statsChart.data.datasets[0].data = data;
+        statsChart.data.datasets[0].label = metricLabel;
+        statsChart.update();
+    }
+};
+metricSelection.addEventListener('change', populateStatsChart);
 const initializeStatsDashboard = () => { const ctx = document.getElementById('stats-chart').getContext('2d'); if (statsChart) { statsChart.destroy(); } statsChart = new Chart(ctx, { type: 'line', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Weekly Vibe', data: [], borderColor: '#5d9cec', tension: 0.4, pointBackgroundColor: '#5d9cec', pointRadius: 5, }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: false }, legend: { display: false }, afterDraw: chart => { if (chart.data.datasets.every(ds => ds.data.every(val => val === null))) { let ctx = chart.ctx; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = "16px sans-serif"; ctx.fillStyle = '#aaa'; ctx.fillText('Not enough data to display a trend yet.', chart.width / 2, chart.height / 2); ctx.restore(); } } }, scales: { y: { beginAtZero: true, max: 10, ticks: { display: false } }, x: { grid: { display: false } } } } }); };
 
 // --- AUTHENTICATION LOGIC ---
@@ -113,50 +152,56 @@ weeklyPlanForm.addEventListener('submit', async (e) => { e.preventDefault(); if 
 editPlanBtn.addEventListener('click', () => { weeklyPlanForm.hidden = false; weeklyPlanDisplay.hidden = true; });
 
 // --- DAILY REFLECTION LOGIC ---
-centerednessSlider.addEventListener('input', () => { sliderValue.textContent = centerednessSlider.value; });
+const sliders = [ { slider: centerednessSlider, value: centerednessValue }, { slider: intentionalitySlider, value: intentionalityValue }, { slider: connectionSlider, value: connectionValue }, { slider: movementSlider, value: movementValue }, ];
+sliders.forEach(({slider, value}) => { slider.addEventListener('input', () => { value.textContent = slider.value; }); });
 const loadDailyReflection = async () => {
     if (!currentUser) return;
-    const todayId = getDayId(new Date());
-    const selectedId = getDayId(selectedDate);
-    const docRef = doc(db, 'reflections', `${currentUser.uid}_${selectedId}`);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const dayId = getDayId(yesterday);
+    const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`);
     const docSnap = await getDoc(docRef);
-
-    reflectionForm.hidden = true;
-    reflectionDisplay.hidden = true;
-    noReflectionMessage.hidden = true;
-
-    if (selectedId === todayId) {
-        reflectionForm.hidden = false;
-        if (docSnap.exists()) {
-            const reflection = docSnap.data();
-            reflectionInput.value = reflection.text;
-            centerednessSlider.value = reflection.centeredness || 5;
-        } else {
-            reflectionForm.reset();
-            centerednessSlider.value = 5;
+    if (docSnap.exists()) {
+        const reflection = docSnap.data();
+        reflectionForm.hidden = true;
+        reflectionDisplay.hidden = false;
+        const pulseScoresDiv = document.getElementById('display-pulse-scores');
+        pulseScoresDiv.innerHTML = '';
+        if (reflection.pulse) {
+            for (const [key, value] of Object.entries(reflection.pulse)) {
+                const scoreDiv = document.createElement('div');
+                scoreDiv.className = 'pulse-score';
+                const label = key.charAt(0).toUpperCase() + key.slice(1);
+                scoreDiv.innerHTML = `<span class="pulse-score-label">${label}</span><span class="pulse-score-value">${value}/10</span>`;
+                pulseScoresDiv.appendChild(scoreDiv);
+            }
         }
-        sliderValue.textContent = centerednessSlider.value;
+        displayReflectionText.textContent = reflection.text || "No thoughts were recorded.";
+        reflectionInput.value = reflection.text || '';
+        centerednessSlider.value = reflection.pulse?.centeredness || 5;
+        intentionalitySlider.value = reflection.pulse?.intentionality || 5;
+        connectionSlider.value = reflection.pulse?.connection || 5;
+        movementSlider.value = reflection.pulse?.movement || 5;
+        sliders.forEach(({slider, value}) => value.textContent = slider.value);
     } else {
-        if (docSnap.exists()) {
-            const reflection = docSnap.data();
-            reflectionDisplay.hidden = false;
-            displayReflectionText.textContent = reflection.text;
-            editReflectionBtn.hidden = true; 
-        } else {
-            noReflectionMessage.hidden = false;
-        }
+        reflectionForm.hidden = false;
+        reflectionDisplay.hidden = true;
+        reflectionForm.reset();
+        sliders.forEach(({slider, value}) => {
+            slider.value = 5;
+            value.textContent = '5';
+        });
     }
 };
 reflectionForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentUser) return;
-    const dayId = getDayId(selectedDate);
-    if (dayId !== getDayId(new Date())) {
-        alert("You can only save reflections for the current day.");
-        return;
-    }
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const dayId = getDayId(yesterday);
     const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`);
-    await setDoc(docRef, { uid: currentUser.uid, dayId: dayId, text: reflectionInput.value.trim(), centeredness: parseInt(centerednessSlider.value), weekId: getWeekId(selectedDate), }, { merge: true });
+    await setDoc(docRef, { uid: currentUser.uid, dayId: dayId, text: reflectionInput.value.trim(), pulse: { centeredness: parseInt(centerednessSlider.value), intentionality: parseInt(intentionalitySlider.value), connection: parseInt(connectionSlider.value), movement: parseInt(movementSlider.value), }, weekId: getWeekId(yesterday), }, { merge: true });
+    loadDailyReflection();
     populateStatsChart();
 });
 editReflectionBtn.addEventListener('click', () => {
