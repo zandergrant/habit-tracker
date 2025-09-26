@@ -15,21 +15,7 @@
 </head>
 <body>
     <div id="auth-container">
-        <h1>Welcome to Habit Tracker</h1>
-        <form id="signup-form">
-            <h2>Sign Up</h2>
-            <input type="email" id="signup-email" placeholder="Email" required>
-            <input type="password" id="signup-password" placeholder="Password" required>
-            <button type="submit">Sign Up</button>
-        </form>
-        <hr>
-        <form id="login-form">
-            <h2>Login</h2>
-            <input type="email" id="login-email" placeholder="Email" required>
-            <input type="password" id="login-password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-    </div>
+        </div>
 
     <div id="app-container" hidden>
         <div class="header">
@@ -39,10 +25,12 @@
 
         <div class="stats-card">
             <div class="stats-header">
-                <h2>Centeredness Over Time</h2>
-                <select id="time-selection">
-                    <option value="weekly">Last 7 Days</option>
-                    <option value="monthly" disabled>Last 30 Days (coming soon)</option>
+                <h2>Your Progress</h2>
+                <select id="metric-selection">
+                    <option value="centeredness">Centeredness</option>
+                    <option value="intentionality">Intentionality</option>
+                    <option value="connection">Connection</option>
+                    <option value="movement">Movement</option>
                 </select>
             </div>
             <div class="chart-container">
@@ -60,83 +48,37 @@
             <h2 class="section-title">The Daily Work</h2>
             <div class="daily-work-grid">
                 <div class="card card-large" id="reflection-card">
-                    <h3>Daily Reflection</h3>
+                    <h3>Morning Reflection</h3>
                     <form id="reflection-form">
-                        <label for="centeredness-slider">How centered do you feel today? <span id="slider-value">5</span>/10</label>
+                        <p class="reflection-prompt">Reflect on how <strong>yesterday</strong> went to set the tone for today.</p>
+                        
+                        <label>Centeredness: <span class="slider-value" id="centeredness-value">5</span>/10</label>
                         <input type="range" id="centeredness-slider" min="1" max="10" value="5" required>
 
-                        <label for="reflection-input">What matters today? How are you feeling?</label>
-                        <textarea id="reflection-input" rows="4" placeholder="Optional: write your thoughts here..."></textarea>
-                        <button type="submit">Save</button>
+                        <label>Intentionality: <span class="slider-value" id="intentionality-value">5</span>/10</label>
+                        <input type="range" id="intentionality-slider" min="1" max="10" value="5" required>
+                        
+                        <label>Connection: <span class="slider-value" id="connection-value">5</span>/10</label>
+                        <input type="range" id="connection-slider" min="1" max="10" value="5" required>
+
+                        <label>Movement: <span class="slider-value" id="movement-value">5</span>/10</label>
+                        <input type="range" id="movement-slider" min="1" max="10" value="5" required>
+
+                        <label for="reflection-input">Additional thoughts (optional):</label>
+                        <textarea id="reflection-input" rows="3" placeholder="Any insights or observations?"></textarea>
+                        <button type="submit">Save Reflection</button>
                     </form>
                     <div id="reflection-display" hidden>
+                        <h4>Yesterday's Pulse:</h4>
+                        <div id="display-pulse-scores"></div>
+                        <h4>Yesterday's Thoughts:</h4>
                         <p id="display-reflection-text"></p>
                         <button id="edit-reflection-btn">Edit</button>
                     </div>
-                    <p id="no-reflection-message" hidden>No reflection was saved for this day.</p>
                 </div>
-                <div class="card card-small" id="reflection-counter-card">
-                    <h3>Reflection Streak</h3>
-                    <p class="counter-number" id="reflection-streak">0</p>
-                    <p class="counter-label">Days in a row</p>
-                    <a href="#" id="view-all-reflections">View Previous Reflections</a>
                 </div>
-                <div class="card card-large" id="habit-tracker-card">
-                    <h3>Daily Habits</h3>
-                    <form id="habit-form">
-                        <input type="text" id="habit-input" placeholder="Enter a new habit..." autocomplete="off">
-                        <button type="submit">Add Habit</button>
-                    </form>
-                    <ul id="habit-list"></ul>
-                </div>
-                <div class="card card-small" id="habits-counter-card">
-                    <h3>Habits Completed</h3>
-                    <p class="counter-number" id="habits-completed-today">0</p>
-                    <p class="counter-label">Days you've completed all habits</p>
-                </div>
-            </div>
         </div>
-
-        <div class="section-container">
-            <h2 class="section-title">The Weekly Work</h2>
-            <div class="card" id="weekly-ritual-card">
-                <h3>Weekly Planning Ritual</h3>
-                <form id="weekly-plan-form">
-                    <label for="week-focus">What is your main focus this week?</label>
-                    <input type="text" id="week-focus" placeholder="e.g., Complete project proposal" required>
-                    <label>What are your top 3 priorities?</label>
-                    <input type="text" id="priority-1" placeholder="Priority #1" required>
-                    <input type="text" id="priority-2" placeholder="Priority #2" required>
-                    <input type="text" id="priority-3" placeholder="Priority #3" required>
-                    <label for="week-vibe">What's the vibe for the week?</label>
-                    <input type="text" id="week-vibe" placeholder="e.g., Focused and energized" required>
-                    <button type="submit">Save Weekly Plan</button>
-                </form>
-                <div id="weekly-plan-display" hidden>
-                    <h4>This Week's Focus:</h4>
-                    <p id="display-focus"></p>
-                    <h4>Top Priorities:</h4>
-                    <ul id="display-priorities"></ul>
-                    <h4>Vibe for the Week:</h4>
-                    <p id="display-vibe"></p>
-                    <button id="edit-plan-btn">Edit Plan</button>
-                </div>
-            </div>
         </div>
-
-        <div class="section-container">
-            <h2 class="section-title">The Long Game</h2>
-            <div class="card" id="goal-tracker-card">
-                <h3>Intentional Goal Tracking</h3>
-                <form id="goal-form">
-                    <input type="text" id="goal-input" placeholder="Add a new long-term goal..." autocomplete="off">
-                    <textarea id="goal-why-input" placeholder="Why does this goal matter to you?" rows="3"></textarea>
-                    <button type="submit">Add Goal</button>
-                </form>
-                <ul id="goal-list"></ul>
-            </div>
-        </div>
-    </div>
 
     <script type="module" src="script-v4.js"></script>
 </body>
