@@ -74,37 +74,7 @@ prevDayBtn.addEventListener('click', () => changeDate(-1));
 nextDayBtn.addEventListener('click', () => changeDate(1));
 
 // --- CHART LOGIC ---
-const populateStatsChart = async () => {
-    if (!currentUser) return;
-    const metric = metricSelection.value;
-    const metricLabel = metric.charAt(0).toUpperCase() + metric.slice(1);
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 6);
-    const q = query(collection(db, 'reflections'), where("uid", "==", currentUser.uid), where("dayId", ">=", getDayId(startDate)), orderBy("dayId", "asc"));
-    const querySnapshot = await getDocs(q);
-    const reflectionsData = new Map();
-    querySnapshot.forEach(doc => {
-        if(doc.data().pulse && doc.data().pulse[metric] !== undefined) {
-            reflectionsData.set(doc.data().dayId, doc.data().pulse[metric]);
-        }
-    });
-    const labels = [];
-    const data = [];
-    for (let i = 0; i < 7; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        const dayId = getDayId(date);
-        labels.push(date.toLocaleDateString(undefined, { weekday: 'short' }));
-        data.push(reflectionsData.get(dayId) || null);
-    }
-    if (statsChart) {
-        statsChart.data.labels = labels;
-        statsChart.data.datasets[0].data = data;
-        statsChart.data.datasets[0].label = metricLabel;
-        statsChart.update();
-    }
-};
+const populateStatsChart = async () => { if (!currentUser) return; const metric = metricSelection.value; const metricLabel = metric.charAt(0).toUpperCase() + metric.slice(1); const endDate = new Date(); const startDate = new Date(); startDate.setDate(endDate.getDate() - 6); const q = query(collection(db, 'reflections'), where("uid", "==", currentUser.uid), where("dayId", ">=", getDayId(startDate)), orderBy("dayId", "asc")); const querySnapshot = await getDocs(q); const reflectionsData = new Map(); querySnapshot.forEach(doc => { if(doc.data().pulse && doc.data().pulse[metric] !== undefined) { reflectionsData.set(doc.data().dayId, doc.data().pulse[metric]); } }); const labels = []; const data = []; for (let i = 0; i < 7; i++) { const date = new Date(startDate); date.setDate(startDate.getDate() + i); const dayId = getDayId(date); labels.push(date.toLocaleDateString(undefined, { weekday: 'short' })); data.push(reflectionsData.get(dayId) || null); } if (statsChart) { statsChart.data.labels = labels; statsChart.data.datasets[0].data = data; statsChart.data.datasets[0].label = metricLabel; statsChart.update(); } };
 metricSelection.addEventListener('change', populateStatsChart);
 const initializeStatsDashboard = () => { const ctx = document.getElementById('stats-chart').getContext('2d'); if (statsChart) { statsChart.destroy(); } statsChart = new Chart(ctx, { type: 'line', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Weekly Vibe', data: [], borderColor: '#5d9cec', tension: 0.4, pointBackgroundColor: '#5d9cec', pointRadius: 5, }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: false }, legend: { display: false }, afterDraw: chart => { if (chart.data.datasets.every(ds => ds.data.every(val => val === null))) { let ctx = chart.ctx; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = "16px sans-serif"; ctx.fillStyle = '#aaa'; ctx.fillText('Not enough data to display a trend yet.', chart.width / 2, chart.height / 2); ctx.restore(); } } }, scales: { y: { beginAtZero: true, max: 10, ticks: { display: false } }, x: { grid: { display: false } } } } }); };
 
@@ -154,73 +124,9 @@ editPlanBtn.addEventListener('click', () => { weeklyPlanForm.hidden = false; wee
 // --- DAILY REFLECTION LOGIC ---
 const sliders = [ { slider: centerednessSlider, value: centerednessValue, key: 'centeredness' }, { slider: intentionalitySlider, value: intentionalityValue, key: 'intentionality' }, { slider: connectionSlider, value: connectionValue, key: 'connection' }, { slider: movementSlider, value: movementValue, key: 'movement' }, ];
 sliders.forEach(({slider, value}) => { slider.addEventListener('input', () => { value.textContent = slider.value; }); });
-const loadDailyReflection = async () => {
-    if (!currentUser) return;
-    
-    reflectionLoader.hidden = false;
-    reflectionForm.hidden = true;
-    reflectionDisplay.hidden = true;
-
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const dayId = getDayId(yesterday);
-    
-    const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`);
-    const docSnap = await getDoc(docRef);
-
-    reflectionLoader.hidden = true;
-
-    if (docSnap.exists()) {
-        const reflection = docSnap.data();
-        reflectionDisplay.hidden = false;
-        
-        const pulseScoresDiv = document.getElementById('display-pulse-scores');
-        pulseScoresDiv.innerHTML = '';
-        if (reflection.pulse) {
-            for (const [key, value] of Object.entries(reflection.pulse)) {
-                const scoreDiv = document.createElement('div');
-                scoreDiv.className = 'pulse-score';
-                const label = key.charAt(0).toUpperCase() + key.slice(1);
-                scoreDiv.innerHTML = `<span class="pulse-score-label">${label}</span><span class="pulse-score-value">${value}/10</span>`;
-                pulseScoresDiv.appendChild(scoreDiv);
-            }
-        }
-        
-        displayReflectionText.textContent = reflection.text || "No thoughts were recorded.";
-        
-        reflectionInput.value = reflection.text || '';
-        sliders.forEach(({slider, value, key}) => {
-            slider.value = reflection.pulse?.[key] || 5;
-            value.textContent = slider.value;
-        });
-    } else {
-        reflectionForm.hidden = false;
-        reflectionForm.reset();
-        sliders.forEach(({slider, value}) => {
-            slider.value = 5;
-            value.textContent = '5';
-        });
-    }
-};
-reflectionForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!currentUser) return;
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const dayId = getDayId(yesterday);
-    const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`);
-    const pulseData = {};
-    sliders.forEach(({slider, key}) => {
-        pulseData[key] = parseInt(slider.value);
-    });
-    await setDoc(docRef, { uid: currentUser.uid, dayId: dayId, text: reflectionInput.value.trim(), pulse: pulseData, weekId: getWeekId(yesterday), }, { merge: true });
-    loadDailyReflection();
-    populateStatsChart();
-});
-editReflectionBtn.addEventListener('click', () => {
-    reflectionForm.hidden = false;
-    reflectionDisplay.hidden = true;
-});
+const loadDailyReflection = async () => { if (!currentUser) return; reflectionLoader.hidden = false; reflectionForm.hidden = true; reflectionDisplay.hidden = true; const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1); const dayId = getDayId(yesterday); const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`); const docSnap = await getDoc(docRef); reflectionLoader.hidden = true; if (docSnap.exists()) { const reflection = docSnap.data(); reflectionDisplay.hidden = false; const pulseScoresDiv = document.getElementById('display-pulse-scores'); pulseScoresDiv.innerHTML = ''; if (reflection.pulse) { for (const [key, value] of Object.entries(reflection.pulse)) { const scoreDiv = document.createElement('div'); scoreDiv.className = 'pulse-score'; const label = key.charAt(0).toUpperCase() + key.slice(1); scoreDiv.innerHTML = `<span class="pulse-score-label">${label}</span><span class="pulse-score-value">${value}/10</span>`; pulseScoresDiv.appendChild(scoreDiv); } } displayReflectionText.textContent = reflection.text || "No thoughts were recorded."; reflectionInput.value = reflection.text || ''; sliders.forEach(({slider, value, key}) => { slider.value = reflection.pulse?.[key] || 5; value.textContent = slider.value; }); } else { reflectionForm.hidden = false; reflectionForm.reset(); sliders.forEach(({slider, value}) => { slider.value = 5; value.textContent = '5'; }); } };
+reflectionForm.addEventListener('submit', async (e) => { e.preventDefault(); if (!currentUser) return; const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1); const dayId = getDayId(yesterday); const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`); const pulseData = {}; sliders.forEach(({slider, key}) => { pulseData[key] = parseInt(slider.value); }); await setDoc(docRef, { uid: currentUser.uid, dayId: dayId, text: reflectionInput.value.trim(), pulse: pulseData, weekId: getWeekId(yesterday), }, { merge: true }); loadDailyReflection(); populateStatsChart(); });
+editReflectionBtn.addEventListener('click', () => { reflectionForm.hidden = false; reflectionDisplay.hidden = true; });
 
 // --- GOAL TRACKING LOGIC ---
 const loadGoals = () => { if (!currentUser) return; const q = query(collection(db, 'goals'), where("uid", "==", currentUser.uid)); goalsUnsubscribe = onSnapshot(q, (snapshot) => { goalList.innerHTML = ''; snapshot.forEach(renderGoal); }); };
