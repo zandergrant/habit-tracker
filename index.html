@@ -11,8 +11,7 @@
 
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
+    </head>
 <body>
     <div id="auth-container">
         <h1>Welcome to Habit Tracker</h1>
@@ -43,62 +42,9 @@
             <button id="next-day-btn">Next &gt;</button>
         </div>
 
-        <div class="stats-card">
-            <div class="stats-header">
-                <h2>Centeredness Over Time</h2>
-                <select id="metric-selection">
-                    <option value="centeredness">Centeredness</option>
-                    <option value="intentionality">Intentionality</option>
-                    <option value="connection">Connection</option>
-                    <option value="movement">Movement</option>
-                </select>
-            </div>
-            <div class="chart-container">
-                <canvas id="stats-chart"></canvas>
-            </div>
-        </div>
-
         <div class="section-container">
             <h2 class="section-title">The Daily Work</h2>
             <div class="daily-work-grid">
-                <div class="card card-large" id="reflection-card">
-                    <h3>Morning Reflection</h3>
-                    <p id="reflection-loader">Loading...</p>
-                    <form id="reflection-form" hidden>
-                        <p class="reflection-prompt">Reflect on how <strong>yesterday</strong> went to set the tone for today.</p>
-
-                        <label>Centeredness: <span class="slider-value" id="centeredness-value">5</span>/10</label>
-                        <input type="range" id="centeredness-slider" min="1" max="10" value="5" required />
-
-                        <label>Intentionality: <span class="slider-value" id="intentionality-value">5</span>/10</label>
-                        <input type="range" id="intentionality-slider" min="1" max="10" value="5" required />
-
-                        <label>Connection: <span class="slider-value" id="connection-value">5</span>/10</label>
-                        <input type="range" id="connection-slider" min="1" max="10" value="5" required />
-
-                        <label>Movement: <span class="slider-value" id="movement-value">5</span>/10</label>
-                        <input type="range" id="movement-slider" min="1" max="10" value="5" required />
-
-                        <label for="reflection-input">Additional thoughts (optional):</label>
-                        <textarea id="reflection-input" rows="3" placeholder="Any insights or observations?"></textarea>
-                        <button type="submit">Save Reflection</button>
-                    </form>
-                    <div id="reflection-display" hidden>
-                        <h4>Yesterday's Pulse:</h4>
-                        <div id="display-pulse-scores"></div>
-                        <h4>Yesterday's Thoughts:</h4>
-                        <p id="display-reflection-text"></p>
-                        <button id="edit-reflection-btn">Edit</button>
-                    </div>
-                </div>
-
-                <div class="card card-small" id="reflection-counter-card">
-                    <h3>Reflection Streak</h3>
-                    <p class="counter-number" id="reflection-streak">0</p>
-                    <p class="counter-label">Days in a row</p>
-                    <a href="#" id="view-all-reflections">View Previous Reflections</a>
-                </div>
-
                 <div class="card card-large" id="habit-tracker-card">
                     <h3>Daily Habits</h3>
                     <form id="habit-form">
@@ -160,7 +106,6 @@
         </div>
     </div>
 
-    <!-- Your Firebase config should export initialized `auth` and `db` -->
     <script type="module" src="script-v4.js"></script>
 </body>
 </html>
