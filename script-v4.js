@@ -29,7 +29,7 @@ const reflectionInput = document.getElementById('reflection-input');
 const reflectionDisplay = document.getElementById('reflection-display');
 const displayReflectionText = document.getElementById('display-reflection-text');
 const editReflectionBtn = document.getElementById('edit-reflection-btn');
-const noReflectionMessage = document.getElementById('no-reflection-message');
+const reflectionLoader = document.getElementById('reflection-loader');
 const goalForm = document.getElementById('goal-form');
 const goalInput = document.getElementById('goal-input');
 const goalWhyInput = document.getElementById('goal-why-input');
@@ -152,19 +152,28 @@ weeklyPlanForm.addEventListener('submit', async (e) => { e.preventDefault(); if 
 editPlanBtn.addEventListener('click', () => { weeklyPlanForm.hidden = false; weeklyPlanDisplay.hidden = true; });
 
 // --- DAILY REFLECTION LOGIC ---
-const sliders = [ { slider: centerednessSlider, value: centerednessValue }, { slider: intentionalitySlider, value: intentionalityValue }, { slider: connectionSlider, value: connectionValue }, { slider: movementSlider, value: movementValue }, ];
+const sliders = [ { slider: centerednessSlider, value: centerednessValue, key: 'centeredness' }, { slider: intentionalitySlider, value: intentionalityValue, key: 'intentionality' }, { slider: connectionSlider, value: connectionValue, key: 'connection' }, { slider: movementSlider, value: movementValue, key: 'movement' }, ];
 sliders.forEach(({slider, value}) => { slider.addEventListener('input', () => { value.textContent = slider.value; }); });
 const loadDailyReflection = async () => {
     if (!currentUser) return;
+    
+    reflectionLoader.hidden = false;
+    reflectionForm.hidden = true;
+    reflectionDisplay.hidden = true;
+
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const dayId = getDayId(yesterday);
+    
     const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`);
     const docSnap = await getDoc(docRef);
+
+    reflectionLoader.hidden = true;
+
     if (docSnap.exists()) {
         const reflection = docSnap.data();
-        reflectionForm.hidden = true;
         reflectionDisplay.hidden = false;
+        
         const pulseScoresDiv = document.getElementById('display-pulse-scores');
         pulseScoresDiv.innerHTML = '';
         if (reflection.pulse) {
@@ -176,16 +185,16 @@ const loadDailyReflection = async () => {
                 pulseScoresDiv.appendChild(scoreDiv);
             }
         }
+        
         displayReflectionText.textContent = reflection.text || "No thoughts were recorded.";
+        
         reflectionInput.value = reflection.text || '';
-        centerednessSlider.value = reflection.pulse?.centeredness || 5;
-        intentionalitySlider.value = reflection.pulse?.intentionality || 5;
-        connectionSlider.value = reflection.pulse?.connection || 5;
-        movementSlider.value = reflection.pulse?.movement || 5;
-        sliders.forEach(({slider, value}) => value.textContent = slider.value);
+        sliders.forEach(({slider, value, key}) => {
+            slider.value = reflection.pulse?.[key] || 5;
+            value.textContent = slider.value;
+        });
     } else {
         reflectionForm.hidden = false;
-        reflectionDisplay.hidden = true;
         reflectionForm.reset();
         sliders.forEach(({slider, value}) => {
             slider.value = 5;
@@ -200,7 +209,11 @@ reflectionForm.addEventListener('submit', async (e) => {
     yesterday.setDate(yesterday.getDate() - 1);
     const dayId = getDayId(yesterday);
     const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`);
-    await setDoc(docRef, { uid: currentUser.uid, dayId: dayId, text: reflectionInput.value.trim(), pulse: { centeredness: parseInt(centerednessSlider.value), intentionality: parseInt(intentionalitySlider.value), connection: parseInt(connectionSlider.value), movement: parseInt(movementSlider.value), }, weekId: getWeekId(yesterday), }, { merge: true });
+    const pulseData = {};
+    sliders.forEach(({slider, key}) => {
+        pulseData[key] = parseInt(slider.value);
+    });
+    await setDoc(docRef, { uid: currentUser.uid, dayId: dayId, text: reflectionInput.value.trim(), pulse: pulseData, weekId: getWeekId(yesterday), }, { merge: true });
     loadDailyReflection();
     populateStatsChart();
 });
