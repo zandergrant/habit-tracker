@@ -45,7 +45,7 @@
 
         <div class="stats-card">
             <div class="stats-header">
-                <h2>Your Progress</h2>
+                <h2>Centeredness Over Time</h2>
                 <select id="metric-selection">
                     <option value="centeredness">Centeredness</option>
                     <option value="intentionality">Intentionality</option>
@@ -63,7 +63,9 @@
             <div class="daily-work-grid">
                 <div class="card card-large" id="reflection-card">
                     <h3>Morning Reflection</h3>
-                    <form id="reflection-form">
+                    <p id="reflection-loader">Loading...</p> 
+                    
+                    <form id="reflection-form" hidden>
                         <p class="reflection-prompt">Reflect on how <strong>yesterday</strong> went to set the tone for today.</p>
                         
                         <label>Centeredness: <span class="slider-value" id="centeredness-value">5</span>/10</label>
