@@ -8,13 +8,8 @@ import {
 } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 import {
   collection, addDoc, query, where, onSnapshot, doc,
-  deleteDoc, updateDoc, getDoc, setDoc, getDocs,
-  orderBy
+  deleteDoc, updateDoc, getDoc, setDoc, getDocs, orderBy
 } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
-
-// Optional: uncomment while debugging Firestore permissions/indexes
-// import { setLogLevel } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
-// setLogLevel('debug');
 
 // ----------------------
 // DOM ELEMENTS
@@ -106,8 +101,8 @@ const updateDateDisplay = () => {
 const changeDate = (offset) => {
   selectedDate.setDate(selectedDate.getDate() + offset);
   updateDateDisplay();
-  loadDailyReflection().catch(err => console.error('Reflection load error:', err));
-  loadHabits().catch?.(err => console.error('Habits load error:', err));
+  loadDailyReflection().catch(e => console.error('Reflection load error:', e));
+  loadHabits().catch?.(e => console.error('Habits load error:', e));
 };
 
 prevDayBtn.addEventListener('click', () => changeDate(-1));
@@ -127,8 +122,7 @@ const populateStatsChart = async () => {
   startDate.setDate(endDate.getDate() - 6);
 
   const qRef = query(
-    collection(db, 'reflections'),
-    where('uid', '==', currentUser.uid),
+    collection(db, 'users', currentUser.uid, 'reflections'),
     where('dayId', '>=', getDayId(startDate)),
     orderBy('dayId', 'asc')
   );
@@ -161,7 +155,7 @@ const populateStatsChart = async () => {
 };
 
 metricSelection.addEventListener('change', () =>
-  populateStatsChart().catch(err => console.error('Chart load error:', err))
+  populateStatsChart().catch(e => console.error('Chart load error:', e))
 );
 
 const initializeStatsDashboard = () => {
@@ -172,7 +166,7 @@ const initializeStatsDashboard = () => {
     id: 'emptyState',
     afterDraw(chart) {
       const ds = chart.data.datasets?.[0]?.data ?? [];
-      const allEmpty = ds.length === 0 || ds.every(v => v === null || v === undefined);
+      const allEmpty = ds.length === 0 || ds.every(v => v == null);
       if (!allEmpty) return;
       const { ctx } = chart;
       const { top, bottom, left, right } = chart.chartArea || {};
@@ -209,378 +203,4 @@ const initializeStatsDashboard = () => {
         x: { grid: { display: false } }
       }
     },
-    plugins: [emptyStatePlugin]
-  });
-};
-
-// ----------------------
-// AUTH
-// ----------------------
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    currentUser = user;
-    authContainer.hidden = true;
-    appContainer.hidden = false;
-    userEmailSpan.textContent = user.email;
-
-    selectedDate = new Date();
-    updateDateDisplay();
-
-    initializeStatsDashboard();
-    populateStatsChart().catch(err => console.error('Chart load error:', err));
-
-    loadHabits().catch?.(err => console.error('Habits load error:', err));
-    loadWeeklyPlan().catch?.(err => console.error('Weekly plan load error:', err));
-    loadDailyReflection().catch(err => console.error('Reflection load error:', err));
-    loadGoals().catch?.(err => console.error('Goals load error:', err));
-  } else {
-    currentUser = null;
-    authContainer.hidden = false;
-    appContainer.hidden = true;
-    userEmailSpan.textContent = '';
-
-    if (habitsUnsubscribe) habitsUnsubscribe();
-    if (goalsUnsubscribe) goalsUnsubscribe();
-    habitList.innerHTML = '';
-    goalList.innerHTML = '';
-  }
-});
-
-signupForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  createUserWithEmailAndPassword(
-    auth,
-    document.getElementById('signup-email').value,
-    document.getElementById('signup-password').value
-  ).then(() => signupForm.reset())
-   .catch(err => alert(err.message));
-});
-
-loginForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  signInWithEmailAndPassword(
-    auth,
-    document.getElementById('login-email').value,
-    document.getElementById('login-password').value
-  ).then(() => loginForm.reset())
-   .catch(err => alert(err.message));
-});
-
-logoutBtn.addEventListener('click', () => signOut(auth));
-
-// ----------------------
-// HABITS
-// ----------------------
-const loadHabits = async () => {
-  if (!currentUser) return;
-
-  const dayId = getDayId(selectedDate);
-  const logQuery = query(
-    collection(db, 'habitLog'),
-    where('uid', '==', currentUser.uid),
-    where('date', '==', dayId)
-  );
-  const logSnapshot = await getDocs(logQuery);
-  const completedHabitIds = new Set(logSnapshot.docs.map(d => d.data().habitId));
-
-  const habitsQuery = query(collection(db, 'habits'), where('uid', '==', currentUser.uid));
-  if (habitsUnsubscribe) habitsUnsubscribe();
-
-  habitsUnsubscribe = onSnapshot(habitsQuery, (snapshot) => {
-    habitList.innerHTML = '';
-    snapshot.forEach(d => renderHabit(d, completedHabitIds));
-  });
-};
-
-const renderHabit = (docSnap, completedHabitIds) => {
-  const habit = docSnap.data();
-  const habitId = docSnap.id;
-  const isCompleted = completedHabitIds.has(habitId);
-
-  const li = document.createElement('li');
-  li.className = 'habit-item';
-  li.dataset.id = habitId;
-  if (isCompleted) li.classList.add('completed');
-
-  li.innerHTML = `
-    <span class="habit-text">${habit.text}</span>
-    <div class="actions">
-      <button class="complete-btn"><i class="fas fa-check-circle"></i></button>
-      <button class="delete-btn"><i class="fas fa-trash"></i></button>
-    </div>
-  `;
-  habitList.appendChild(li);
-};
-
-habitForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const habitText = habitInput.value.trim();
-  if (habitText && currentUser) {
-    await addDoc(collection(db, 'habits'), { text: habitText, uid: currentUser.uid });
-    habitInput.value = '';
-  }
-});
-
-habitList.addEventListener('click', async (e) => {
-  if (!currentUser) return;
-
-  const completeButton = e.target.closest('button.complete-btn');
-  const deleteButton = e.target.closest('button.delete-btn');
-  const li = e.target.closest('.habit-item');
-  if (!li) return;
-
-  const habitId = li.dataset.id;
-
-  if (deleteButton) {
-    await deleteDoc(doc(db, 'habits', habitId));
-  } else if (completeButton) {
-    const dayId = getDayId(selectedDate);
-    const logDocId = `${currentUser.uid}_${habitId}_${dayId}`;
-    const logDocRef = doc(db, 'habitLog', logDocId);
-
-    if (li.classList.contains('completed')) {
-      await deleteDoc(logDocRef);
-    } else {
-      await setDoc(logDocRef, { uid: currentUser.uid, habitId, date: dayId });
-    }
-    loadHabits().catch(err => console.error('Habits reload error:', err));
-  }
-});
-
-// ----------------------
-// WEEKLY PLANS
-// ----------------------
-const loadWeeklyPlan = async () => {
-  if (!currentUser) return;
-
-  const weekId = getWeekId();
-  const docRef = doc(db, 'weeklyPlans', `${currentUser.uid}_${weekId}`);
-  const docSnap = await getDoc(docRef);
-
-  if (docSnap.exists()) {
-    const plan = docSnap.data();
-    weeklyPlanForm.hidden = true;
-    weeklyPlanDisplay.hidden = false;
-
-    document.getElementById('display-focus').textContent = plan.focus || '';
-    document.getElementById('display-vibe').textContent = plan.vibe || '';
-
-    const prioritiesList = document.getElementById('display-priorities');
-    prioritiesList.innerHTML = '';
-    (plan.priorities || []).forEach(p => {
-      const li = document.createElement('li');
-      li.textContent = p;
-      prioritiesList.appendChild(li);
-    });
-
-    // Pre-fill form (for edit mode)
-    document.getElementById('week-focus').value = plan.focus || '';
-    document.getElementById('priority-1').value = plan.priorities?.[0] || '';
-    document.getElementById('priority-2').value = plan.priorities?.[1] || '';
-    document.getElementById('priority-3').value = plan.priorities?.[2] || '';
-    document.getElementById('week-vibe').value = plan.vibe || '';
-  } else {
-    weeklyPlanForm.hidden = false;
-    weeklyPlanDisplay.hidden = true;
-    weeklyPlanForm.reset();
-  }
-};
-
-weeklyPlanForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  if (!currentUser) return;
-
-  const weekId = getWeekId();
-  const docRef = doc(db, 'weeklyPlans', `${currentUser.uid}_${weekId}`);
-  const planData = {
-    uid: currentUser.uid,
-    weekId,
-    focus: document.getElementById('week-focus').value,
-    priorities: [
-      document.getElementById('priority-1').value,
-      document.getElementById('priority-2').value,
-      document.getElementById('priority-3').value
-    ],
-    vibe: document.getElementById('week-vibe').value
-  };
-
-  await setDoc(docRef, planData, { merge: true });
-  loadWeeklyPlan().catch(err => console.error('Weekly plan reload error:', err));
-});
-
-editPlanBtn.addEventListener('click', () => {
-  weeklyPlanForm.hidden = false;
-  weeklyPlanDisplay.hidden = true;
-});
-
-// ----------------------
-// DAILY REFLECTIONS
-// ----------------------
-const sliders = [
-  { slider: centerednessSlider, value: centerednessValue, key: 'centeredness' },
-  { slider: intentionalitySlider, value: intentionalityValue, key: 'intentionality' },
-  { slider: connectionSlider, value: connectionValue, key: 'connection' },
-  { slider: movementSlider, value: movementValue, key: 'movement' }
-];
-
-sliders.forEach(({ slider, value }) => {
-  slider.addEventListener('input', () => { value.textContent = slider.value; });
-});
-
-// Guarded loader so UI never sticks on "Loading..."
-const loadDailyReflection = async () => {
-  if (!currentUser) return;
-
-  reflectionLoader.hidden = false;
-  reflectionForm.hidden = true;
-  reflectionDisplay.hidden = true;
-
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const dayId = getDayId(yesterday);
-  const docId = `${currentUser.uid}_${dayId}`;
-  const docRef = doc(db, 'reflections', docId);
-
-  console.log('[Reflection] get()', `reflections/${docId}`);
-
-  try {
-    const snap = await getDoc(docRef);
-
-    if (snap.exists()) {
-      const data = snap.data();
-
-      reflectionDisplay.hidden = false;
-
-      const pulseDiv = document.getElementById('display-pulse-scores');
-      pulseDiv.innerHTML = '';
-      if (data.pulse) {
-        Object.entries(data.pulse).forEach(([key, val]) => {
-          const label = key.charAt(0).toUpperCase() + key.slice(1);
-          const div = document.createElement('div');
-          div.className = 'pulse-score';
-          div.innerHTML = `
-            <span class="pulse-score-label">${label}</span>
-            <span class="pulse-score-value">${val}/10</span>
-          `;
-          pulseDiv.appendChild(div);
-        });
-      }
-
-      displayReflectionText.textContent = data.text || 'No thoughts were recorded.';
-      reflectionInput.value = data.text || '';
-
-      sliders.forEach(({ slider, value, key }) => {
-        slider.value = data.pulse?.[key] ?? 5;
-        value.textContent = slider.value;
-      });
-    } else {
-      // No doc yet → show blank form
-      reflectionForm.hidden = false;
-      reflectionForm.reset();
-      sliders.forEach(({ slider, value }) => { slider.value = 5; value.textContent = '5'; });
-    }
-  } catch (err) {
-    console.error('[Reflection] getDoc failed:', err);
-    // Permission/index/other errors → still show form so UI isn't stuck
-    reflectionForm.hidden = false;
-    reflectionForm.reset();
-    sliders.forEach(({ slider, value }) => { slider.value = 5; value.textContent = '5'; });
-  } finally {
-    reflectionLoader.hidden = true;
-  }
-};
-
-reflectionForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  if (!currentUser) return;
-
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const dayId = getDayId(yesterday);
-
-  const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`);
-
-  const pulseData = {};
-  sliders.forEach(({ slider, key }) => { pulseData[key] = parseInt(slider.value, 10); });
-
-  await setDoc(docRef, {
-    uid: currentUser.uid,
-    dayId,
-    text: reflectionInput.value.trim(),
-    pulse: pulseData,
-    weekId: getWeekId(yesterday)
-  }, { merge: true });
-
-  loadDailyReflection().catch(err => console.error('Reflection reload error:', err));
-  populateStatsChart().catch(err => console.error('Chart reload error:', err));
-});
-
-editReflectionBtn.addEventListener('click', () => {
-  reflectionForm.hidden = false;
-  reflectionDisplay.hidden = true;
-});
-
-// ----------------------
-// GOALS
-// ----------------------
-const loadGoals = async () => {
-  if (!currentUser) return;
-  const qRef = query(collection(db, 'goals'), where('uid', '==', currentUser.uid));
-  if (goalsUnsubscribe) goalsUnsubscribe();
-  goalsUnsubscribe = onSnapshot(qRef, (snapshot) => {
-    goalList.innerHTML = '';
-    snapshot.forEach(renderGoal);
-  });
-};
-
-const renderGoal = (docSnap) => {
-  const goal = docSnap.data();
-  const li = document.createElement('li');
-  li.className = 'goal-item';
-  li.dataset.id = docSnap.id;
-  if (goal.completed) li.classList.add('completed');
-
-  const whyHtml = goal.why ? `<p class="goal-why">${goal.why}</p>` : '';
-  li.innerHTML = `
-    <div class="goal-content">
-      <span class="goal-text">${goal.text}</span>
-      ${whyHtml}
-    </div>
-    <div class="actions">
-      <button class="complete-btn"><i class="fas fa-check-circle"></i></button>
-      <button class="delete-btn"><i class="fas fa-trash"></i></button>
-    </div>
-  `;
-  goalList.appendChild(li);
-};
-
-goalForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const goalText = goalInput.value.trim();
-  const goalWhy = goalWhyInput.value.trim();
-  if (goalText && currentUser) {
-    await addDoc(collection(db, 'goals'), {
-      text: goalText,
-      why: goalWhy,
-      completed: false,
-      uid: currentUser.uid
-    });
-    goalInput.value = '';
-    goalWhyInput.value = '';
-  }
-});
-
-goalList.addEventListener('click', async (e) => {
-  const target = e.target.closest('button');
-  if (!target) return;
-
-  const li = target.closest('.goal-item');
-  const docRef = doc(db, 'goals', li.dataset.id);
-
-  if (target.classList.contains('delete-btn')) {
-    await deleteDoc(docRef);
-  } else if (target.classList.contains('complete-btn')) {
-    const isCompleted = !li.classList.contains('completed');
-    await updateDoc(docRef, { completed: isCompleted });
-  }
-});
+    plugins: [emptyStatePl]()
