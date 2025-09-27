@@ -7,8 +7,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 import {
     collection, addDoc, query, where, onSnapshot, doc,
-    deleteDoc, updateDoc, getDoc, setDoc, getDocs,
-    orderBy
+    deleteDoc, updateDoc, getDoc, setDoc, getDocs
 } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 
 // --- Get DOM Elements ---
@@ -55,7 +54,6 @@ const updateDateDisplay = () => {
 const changeDate = (offset) => { selectedDate.setDate(selectedDate.getDate() + offset); updateDateDisplay(); loadHabits(); };
 prevDayBtn.addEventListener('click', () => changeDate(-1));
 nextDayBtn.addEventListener('click', () => changeDate(1));
-
 
 // --- AUTHENTICATION LOGIC ---
 onAuthStateChanged(auth, (user) => {
