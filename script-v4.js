@@ -11,7 +11,7 @@ import {
   orderBy
 } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 
-// --- Get DOM Elements ---
+// --- DOM Elements ---
 const authContainer = document.getElementById('auth-container');
 const appContainer = document.getElementById('app-container');
 const signupForm = document.getElementById('signup-form');
@@ -53,14 +53,14 @@ const connectionValue = document.getElementById('connection-value');
 const movementSlider = document.getElementById('movement-slider');
 const movementValue = document.getElementById('movement-value');
 
-// --- STATE MANAGEMENT ---
+// --- State ---
 let currentUser = null;
 let habitsUnsubscribe = null;
 let goalsUnsubscribe = null;
 let statsChart = null;
 let selectedDate = new Date();
 
-// --- Helper Functions ---
+// --- Helpers ---
 const getWeekId = (date = new Date()) => {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;
@@ -76,7 +76,7 @@ const getDayId = (date = new Date()) => {
   return d.toISOString().split('T')[0];
 };
 
-// --- DATE NAVIGATION ---
+// --- Date Navigation ---
 const updateDateDisplay = () => {
   const todayId = getDayId(new Date());
   const selectedId = getDayId(selectedDate);
@@ -93,11 +93,10 @@ const changeDate = (offset) => {
   loadDailyReflection().catch(err => console.error('Reflection load error:', err));
   loadHabits().catch?.(err => console.error('Habits load error:', err));
 };
-
 prevDayBtn.addEventListener('click', () => changeDate(-1));
 nextDayBtn.addEventListener('click', () => changeDate(1));
 
-// --- CHART LOGIC ---
+// --- Chart Logic ---
 const populateStatsChart = async () => {
   if (!currentUser) return;
 
@@ -141,7 +140,6 @@ const populateStatsChart = async () => {
     statsChart.update();
   }
 };
-
 metricSelection.addEventListener('change', () =>
   populateStatsChart().catch(err => console.error('Chart load error:', err))
 );
@@ -150,7 +148,6 @@ const initializeStatsDashboard = () => {
   const ctx = document.getElementById('stats-chart').getContext('2d');
   if (statsChart) statsChart.destroy();
 
-  // Custom plugin to display empty state
   const emptyStatePlugin = {
     id: 'emptyState',
     afterDraw(chart) {
@@ -196,7 +193,7 @@ const initializeStatsDashboard = () => {
   });
 };
 
-// --- AUTHENTICATION LOGIC ---
+// --- Auth ---
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUser = user;
@@ -227,7 +224,6 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// Auth form listeners
 signupForm.addEventListener('submit', (e) => {
   e.preventDefault();
   createUserWithEmailAndPassword(
@@ -250,10 +246,9 @@ loginForm.addEventListener('submit', (e) => {
 
 logoutBtn.addEventListener('click', () => signOut(auth));
 
-// --- HABIT TRACKER LOGIC ---
+// --- Habits ---
 const loadHabits = async () => {
   if (!currentUser) return;
-
   const dayId = getDayId(selectedDate);
   const logQuery = query(
     collection(db, 'habitLog'),
@@ -276,12 +271,10 @@ const renderHabit = (docSnap, completedHabitIds) => {
   const habit = docSnap.data();
   const habitId = docSnap.id;
   const isCompleted = completedHabitIds.has(habitId);
-
   const li = document.createElement('li');
   li.className = 'habit-item';
   li.dataset.id = habitId;
   if (isCompleted) li.classList.add('completed');
-
   li.innerHTML = `
     <span class="habit-text">${habit.text}</span>
     <div class="actions">
@@ -295,7 +288,7 @@ const renderHabit = (docSnap, completedHabitIds) => {
 habitForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const habitText = habitInput.value.trim();
-  if (habitText !== '' && currentUser) {
+  if (habitText && currentUser) {
     await addDoc(collection(db, 'habits'), { text: habitText, uid: currentUser.uid });
     habitInput.value = '';
   }
@@ -303,60 +296,45 @@ habitForm.addEventListener('submit', async (e) => {
 
 habitList.addEventListener('click', async (e) => {
   if (!currentUser) return;
-
   const completeButton = e.target.closest('button.complete-btn');
   const deleteButton = e.target.closest('button.delete-btn');
   const li = e.target.closest('.habit-item');
   if (!li) return;
-
   const habitId = li.dataset.id;
-
   if (deleteButton) {
     await deleteDoc(doc(db, 'habits', habitId));
   } else if (completeButton) {
     const dayId = getDayId(selectedDate);
     const logDocId = `${currentUser.uid}_${habitId}_${dayId}`;
     const logDocRef = doc(db, 'habitLog', logDocId);
-
     if (li.classList.contains('completed')) {
       await deleteDoc(logDocRef);
     } else {
       await setDoc(logDocRef, { uid: currentUser.uid, habitId, date: dayId });
     }
-    loadHabits().catch?.(err => console.error('Habits reload error:', err));
+    loadHabits().catch(err => console.error('Habits reload error:', err));
   }
 });
 
-// --- WEEKLY RITUAL LOGIC ---
+// --- Weekly Plan ---
 const loadWeeklyPlan = async () => {
   if (!currentUser) return;
-
   const weekId = getWeekId();
   const docRef = doc(db, 'weeklyPlans', `${currentUser.uid}_${weekId}`);
   const docSnap = await getDoc(docRef);
-
   if (docSnap.exists()) {
     const plan = docSnap.data();
-
     weeklyPlanForm.hidden = true;
     weeklyPlanDisplay.hidden = false;
-
-    document.getElementById('display-focus').textContent = plan.focus;
-    document.getElementById('display-vibe').textContent = plan.vibe;
-
-    const prioritiesList = document.getElementById('display-priorities');
-    prioritiesList.innerHTML = '';
+    document.getElementById('display-focus').textContent = plan.focus || '';
+    document.getElementById('display-vibe').textContent = plan.vibe || '';
+    const list = document.getElementById('display-priorities');
+    list.innerHTML = '';
     (plan.priorities || []).forEach(p => {
       const li = document.createElement('li');
       li.textContent = p;
-      prioritiesList.appendChild(li);
+      list.appendChild(li);
     });
-
-    document.getElementById('week-focus').value = plan.focus || '';
-    document.getElementById('priority-1').value = plan.priorities?.[0] || '';
-    document.getElementById('priority-2').value = plan.priorities?.[1] || '';
-    document.getElementById('priority-3').value = plan.priorities?.[2] || '';
-    document.getElementById('week-vibe').value = plan.vibe || '';
   } else {
     weeklyPlanForm.hidden = false;
     weeklyPlanDisplay.hidden = true;
@@ -367,7 +345,6 @@ const loadWeeklyPlan = async () => {
 weeklyPlanForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!currentUser) return;
-
   const weekId = getWeekId();
   const docRef = doc(db, 'weeklyPlans', `${currentUser.uid}_${weekId}`);
   const planData = {
@@ -377,184 +354,90 @@ weeklyPlanForm.addEventListener('submit', async (e) => {
     priorities: [
       document.getElementById('priority-1').value,
       document.getElementById('priority-2').value,
-      document.getElementById('priority-3').value
+      document.getElementById('priority-3').value,
     ],
-    vibe: document.getElementById('week-vibe').value
+    vibe: document.getElementById('week-vibe').value,
   };
-
   await setDoc(docRef, planData, { merge: true });
-  loadWeeklyPlan().catch?.(err => console.error('Weekly plan reload error:', err));
+  loadWeeklyPlan().catch(err => console.error('Weekly plan reload error:', err));
 });
-
 editPlanBtn.addEventListener('click', () => {
   weeklyPlanForm.hidden = false;
   weeklyPlanDisplay.hidden = true;
 });
 
-// --- DAILY REFLECTION LOGIC ---
-// slider bindings
+// --- Daily Reflection ---
 const sliders = [
   { slider: centerednessSlider, value: centerednessValue, key: 'centeredness' },
   { slider: intentionalitySlider, value: intentionalityValue, key: 'intentionality' },
   { slider: connectionSlider, value: connectionValue, key: 'connection' },
-  { slider: movementSlider, value: movementValue, key: 'movement' }
+  { slider: movementSlider, value: movementValue, key: 'movement' },
 ];
-
 sliders.forEach(({ slider, value }) => {
   slider.addEventListener('input', () => { value.textContent = slider.value; });
 });
 
-// **Guarded** loader so UI never sticks on "Loading..."
+// 🔁 Fixed version — never stuck
 const loadDailyReflection = async () => {
   if (!currentUser) return;
-
-  // show loader, hide views
   reflectionLoader.hidden = false;
   reflectionForm.hidden = true;
   reflectionDisplay.hidden = true;
-
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const dayId = getDayId(yesterday);
+  const docId = `${currentUser.uid}_${dayId}`;
+  const docRef = doc(db, 'reflections', docId);
+  console.log('[Reflection] Fetching:', `reflections/${docId}`);
   try {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const dayId = getDayId(yesterday);
-
-    const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`);
-    const docSnap = await getDoc(docRef);
-
-    reflectionLoader.hidden = true;
-
-    if (docSnap.exists()) {
-      const reflection = docSnap.data();
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
       reflectionDisplay.hidden = false;
-
-      // render pulse scores
-      const pulseScoresDiv = document.getElementById('display-pulse-scores');
-      pulseScoresDiv.innerHTML = '';
-      if (reflection.pulse) {
-        for (const [key, val] of Object.entries(reflection.pulse)) {
-          const label = key.charAt(0).toUpperCase() + key.slice(1);
+      const pulseDiv = document.getElementById('display-pulse-scores');
+      pulseDiv.innerHTML = '';
+      if (data.pulse) {
+        Object.entries(data.pulse).forEach(([key, val]) => {
           const div = document.createElement('div');
           div.className = 'pulse-score';
-          div.innerHTML = `
-            <span class="pulse-score-label">${label}</span>
-            <span class="pulse-score-value">${val}/10</span>
-          `;
-          pulseScoresDiv.appendChild(div);
-        }
+          div.innerHTML = `<span class="pulse-score-label">${key}</span><span class="pulse-score-value">${val}/10</span>`;
+          pulseDiv.appendChild(div);
+        });
       }
-
-      displayReflectionText.textContent = reflection.text || 'No thoughts were recorded.';
-      reflectionInput.value = reflection.text || '';
-
+      displayReflectionText.textContent = data.text || 'No thoughts were recorded.';
+      reflectionInput.value = data.text || '';
       sliders.forEach(({ slider, value, key }) => {
-        slider.value = reflection.pulse?.[key] ?? 5;
+        slider.value = data.pulse?.[key] ?? 5;
         value.textContent = slider.value;
       });
     } else {
-      // show blank form if nothing saved yet
       reflectionForm.hidden = false;
       reflectionForm.reset();
       sliders.forEach(({ slider, value }) => { slider.value = 5; value.textContent = '5'; });
     }
   } catch (err) {
-    console.error('Failed to load daily reflection:', err);
-    // fall back to letting the user create yesterday's entry
-    reflectionLoader.hidden = true;
+    console.error('[Reflection] getDoc failed:', err);
     reflectionForm.hidden = false;
     reflectionForm.reset();
     sliders.forEach(({ slider, value }) => { slider.value = 5; value.textContent = '5'; });
+  } finally {
+    reflectionLoader.hidden = true;
   }
 };
 
 reflectionForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!currentUser) return;
-
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const dayId = getDayId(yesterday);
-
   const docRef = doc(db, 'reflections', `${currentUser.uid}_${dayId}`);
-
   const pulseData = {};
   sliders.forEach(({ slider, key }) => { pulseData[key] = parseInt(slider.value, 10); });
-
   await setDoc(docRef, {
     uid: currentUser.uid,
     dayId,
     text: reflectionInput.value.trim(),
     pulse: pulseData,
-    weekId: getWeekId(yesterday)
-  }, { merge: true });
-
-  loadDailyReflection().catch(err => console.error('Reflection reload error:', err));
-  populateStatsChart().catch(err => console.error('Chart reload error:', err));
-});
-
-editReflectionBtn.addEventListener('click', () => {
-  reflectionForm.hidden = false;
-  reflectionDisplay.hidden = true;
-});
-
-// --- GOAL TRACKING LOGIC ---
-const loadGoals = async () => {
-  if (!currentUser) return;
-  const qRef = query(collection(db, 'goals'), where('uid', '==', currentUser.uid));
-  if (goalsUnsubscribe) goalsUnsubscribe();
-  goalsUnsubscribe = onSnapshot(qRef, (snapshot) => {
-    goalList.innerHTML = '';
-    snapshot.forEach(renderGoal);
-  });
-};
-
-const renderGoal = (docSnap) => {
-  const goal = docSnap.data();
-  const li = document.createElement('li');
-  li.className = 'goal-item';
-  li.dataset.id = docSnap.id;
-  if (goal.completed) li.classList.add('completed');
-
-  const whyHtml = goal.why ? `<p class="goal-why">${goal.why}</p>` : '';
-  li.innerHTML = `
-    <div class="goal-content">
-      <span class="goal-text">${goal.text}</span>
-      ${whyHtml}
-    </div>
-    <div class="actions">
-      <button class="complete-btn"><i class="fas fa-check-circle"></i></button>
-      <button class="delete-btn"><i class="fas fa-trash"></i></button>
-    </div>
-  `;
-  goalList.appendChild(li);
-};
-
-goalForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const goalText = goalInput.value.trim();
-  const goalWhy = goalWhyInput.value.trim();
-  if (goalText !== '' && currentUser) {
-    await addDoc(collection(db, 'goals'), {
-      text: goalText,
-      why: goalWhy,
-      completed: false,
-      uid: currentUser.uid
-    });
-    goalInput.value = '';
-    goalWhyInput.value = '';
-  }
-});
-
-goalList.addEventListener('click', async (e) => {
-  const target = e.target.closest('button');
-  if (!target) return;
-
-  const li = target.closest('.goal-item');
-  const docRef = doc(db, 'goals', li.dataset.id);
-
-  if (target.classList.contains('delete-btn')) {
-    await deleteDoc(docRef);
-  } else if (target.classList.contains('complete-btn')) {
-    const isCompleted = !li.classList.contains('completed');
-    await updateDoc(docRef, { completed: isCompleted });
-  }
-});
+    weekId: getWeekId(yesterday),
+  },
